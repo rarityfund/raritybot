@@ -65,7 +65,7 @@ class Summoner:
             self.force_adventure()
             
     def check_level_up(self):
-        xp_required = self.contracts["summoner"].functions.xp_required(int(self.level)).call()
+        xp_required = self.contracts["summoner"].functions.xp_required(int(self.level)).call() / 1e18
         return int(xp_required) <= int(self.xp)
 
     def force_level_up(self):
