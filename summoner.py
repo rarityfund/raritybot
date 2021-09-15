@@ -18,13 +18,16 @@ class Summoner:
         self.class_name = self.class_from_index(summoner_info[2])
         self.level =  summoner_info[3]
         self.xp = summoner_info[0] / 1e18
+        self.update_gold_balance()
 
     def __str__(self):
-        return str(self.token_id) + ": A " + \
-               self.class_name.ljust(10, ' ') + \
-               "\t level " + str(self.level).rjust(2, ' ') + \
-               "\t " + str(self.xp).rjust(5, ' ') + " xp"
+        return  str(self.token_id) + ": A " + \
+                self.class_name.ljust(10, ' ') + \
+                "\t level " + str(self.level).rjust(2, ' ') + \
+                "\t" + str(round(self.xp)).rjust(5, ' ') + " xp" + \
+                "\t" + str(round(self.gold)).rjust(6, ' ') + " gold"
 
+        
     def update_lvl(self):
         """Update level, typically after levelling up"""
         self.level = self.contracts["summoner"].functions.level(self.token_id).call()
@@ -33,6 +36,9 @@ class Summoner:
         """Update XP, typically after adventuring"""
         self.xp = self.contracts["summoner"].functions.xp(self.token_id).call() / 1e18
     
+    def update_gold_balance(self):
+        self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
+
     def class_from_index(self, index):
         '''Get class from index'''
         summoner_class = self.contracts["summoner"].functions.classes(index).call()
@@ -86,6 +92,7 @@ class Summoner:
         tx_success = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000)
         if tx_success:
             print("The summoner claimed gold with success !")
+            self.update_gold_balance()
         else: 
             print("Transaction failed. The summoner prefers to stay at home")
 
