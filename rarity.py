@@ -1,12 +1,10 @@
-from transacter import Transacter
 from key import InvalidInputError, load_address, unlock_private_key
 from colorama import Fore
 import os.path
 
-# Module key is in key.py
+# Local modules
 import key
-
-# Module contracts is in contracts.py
+from transacter import Transacter
 import contracts
 
 
