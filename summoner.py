@@ -17,11 +17,19 @@ class Summoner:
         # TODO: make that a local lookup
         self.class_name = self.class_from_index(summoner_info[2])
         self.level =  summoner_info[3]
-        self.xp = summoner_info[0]/1e18
+        self.xp = summoner_info[0] / 1e18
 
     def __str__(self):
         return "A " + self.class_name + "\t level " + str(self.level) + "\t with " + str(self.xp) + " xp"
 
+    def update_lvl(self):
+        """Update level, typically after levelling up"""
+        self.level = self.contracts["summoner"].functions.level(self.token_id).call()
+
+    def update_xp(self):
+        """Update XP, typically after adventuring"""
+        self.xp = self.contracts["summoner"].functions.xp(self.token_id).call() / 1e18
+    
     def class_from_index(self, index):
         '''Get class from index'''
         summoner_class = self.contracts["summoner"].functions.classes(index).call()
@@ -38,6 +46,7 @@ class Summoner:
         tx_success = self.transacter.sign_and_execute(adventure_fun, gas = 70000)
         if tx_success:
             print("The summoner came back with success from his adventure!")
+            self.update_xp()
         else: 
             print("Transaction failed. The summoner prefers to stay at home")
         return tx_success
@@ -56,6 +65,7 @@ class Summoner:
         tx_success = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
         if tx_success:
             print(Fore.YELLOW + "He has passed a new level!")
+            self.update_lvl()
         else: 
             print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")
 
