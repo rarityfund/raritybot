@@ -20,7 +20,10 @@ class Summoner:
         self.xp = summoner_info[0] / 1e18
 
     def __str__(self):
-        return "A " + self.class_name + "\t level " + str(self.level) + "\t with " + str(self.xp) + " xp"
+        return str(self.token_id) + ": A " + \
+               self.class_name.ljust(10, ' ') + \
+               "\t level " + str(self.level).rjust(2, ' ') + \
+               "\t " + str(self.xp).rjust(5, ' ') + " xp"
 
     def update_lvl(self):
         """Update level, typically after levelling up"""
