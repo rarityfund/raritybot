@@ -78,5 +78,6 @@ if (__name__ == "__main__"):
 
     print("\n")
     print(Fore.RED + "Our tasks are done now, time to rest, goodbye")
-
+    print(Fore.RED + "Total session cost: " + str(transacter.session_cost) + " FTM")
+    
 

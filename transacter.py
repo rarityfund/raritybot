@@ -11,6 +11,7 @@ class Transacter:
         self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
         # Prepare all contracts only once
         self.contracts = {cname: contracts.get_contract(self.w3, cname) for cname in contracts.contract_addresses.keys()}
+        self.session_cost = 0
 
     def timestamp(self):
         return self.w3.eth.get_block('latest')["timestamp"]
@@ -36,7 +37,10 @@ class Transacter:
         self.w3.eth.send_raw_transaction(tx_signed.rawTransaction)
         self.nonce = self.nonce + 1
         tx_hash = self.w3.toHex(self.w3.keccak(tx_signed.rawTransaction))
-        print("Transaction sent, id : " + tx_hash)
+
+        estimated_cost = gas * self.w3.eth.gas_price / 1e18
+        self.session_cost += estimated_cost
+        print("Transaction sent for " + str(estimated_cost) + "FTM, id: " + tx_hash)
         if not wait_for_receipt:
             return True
         else:
