@@ -62,11 +62,17 @@ def store_private_key(private_key, password, filepath):
         json.dump(keystore_dict, f)
 
 def load_private_key(filepath, password):
-    '''Load encrypted private key from file. May raise ValueError or FileNotFoundError.'''
-    with open(filepath) as keyfile:
-        encrypted_key = json.load(keyfile)
-        private_key = Account.decrypt(encrypted_key, password)
+    '''Load encrypted private key from file. May raise InvalidInputError.'''
+    try:
+        with open(filepath) as keyfile:
+            encrypted_key = json.load(keyfile)
+            private_key = Account.decrypt(encrypted_key, password)
+    except FileNotFoundError as e:
+        raise InvalidInputError("Invalid path to private key file")
+    except ValueError:
+        raise InvalidInputError("Invalid password provided")
     return private_key
+
 
 def unlock_private_key(filepath):
     '''
@@ -75,12 +81,7 @@ def unlock_private_key(filepath):
     '''
     print("Please enter you password to continue :")
     password = getpass("")
-    try:
-        private_key = load_private_key(filepath, password)
-    except FileNotFoundError as e:
-        raise InvalidInputError("Invalid path to private key file")
-    except ValueError:
-        raise InvalidInputError("Invalid password provided")
+    private_key = load_private_key(filepath, password)
     return private_key
 
 def load_address(filepath):
