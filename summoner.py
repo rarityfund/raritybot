@@ -61,7 +61,7 @@ class Summoner:
 
     def check_adventure(self):    
         next_time_available = self.contracts["summoner"].functions.adventurers_log(self.token_id).call()
-        current_time = self.transacter.timestamp()
+        current_time = self.transacter.timestamp
         return current_time > next_time_available
 
     def force_adventure(self):
@@ -124,7 +124,7 @@ class Summoner:
 
     def check_go_cellar(self):
         next_time_available = self.contracts["cellar"].functions.adventurers_log(self.token_id).call()
-        current_time = self.transacter.timestamp()
+        current_time = self.transacter.timestamp
         if current_time > next_time_available:
             expected_loot = int(self.contracts["cellar"].functions.scout(self.token_id).call())
             return expected_loot > 0

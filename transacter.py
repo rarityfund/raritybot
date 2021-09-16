@@ -26,6 +26,7 @@ class Transacter:
         # Prepare all contracts only once
         self.contracts = {cname: self.get_contract(cname) for cname in self.contract_addresses.keys()}
         self.session_cost = 0
+        self.update_timestamp() # create self.timestamp
 
 
     def get_contract(self, contract_name):
@@ -46,8 +47,8 @@ class Transacter:
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
 
-    def timestamp(self):
-        return self.w3.eth.get_block('latest')["timestamp"]
+    def update_timestamp(self):
+        self.timestamp = self.w3.eth.get_block('latest')["timestamp"]
 
     def sign_and_execute(self, w3fun, gas, wait_for_receipt = True, wait_timeout = 360):
         """
