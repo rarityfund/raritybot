@@ -72,16 +72,12 @@ if (__name__ == "__main__"):
     transacter = Transacter(owner_address, private_key)
 
     print("Scanning for summoners...\n")
-    summoners = contracts.list_summoners(owner_address, transacter)
+    summoners = contracts.list_summoners(owner_address, transacter, verbose = True)
+    print("\n")
 
     if not summoners:
         print("This address doesn't contains any rarities, bot is exiting...")
         exit()
-
-    print("Here is the list of your summoners :")
-    for summoner in summoners:
-        print(Fore.LIGHTGREEN_EX + str(summoner))
-    print("\n")
 
     print("Looking for things to do ...")
 

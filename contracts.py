@@ -1,5 +1,6 @@
 import requests
 from web3 import Web3
+from colorama import Fore
 
 # Class Summoner is defined in summoner.py
 from summoner import Summoner
@@ -62,11 +63,14 @@ def list_rarities(address):
 
     return rarities_tokenid_list
 
-def list_summoners(address, transacter):
+def list_summoners(address, transacter, verbose = False):
     rarities_tokenid_list = list_rarities(address)
 
     summoners = []
     for id in rarities_tokenid_list:
-        summoners.append(Summoner(id, transacter))
+        summoner = Summoner(id, transacter)
+        summoners.append(summoner)
+        if verbose:
+            print(Fore.LIGHTGREEN_EX + str(summoner))
     return summoners
 
