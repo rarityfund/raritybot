@@ -31,8 +31,9 @@ if (__name__ == "__main__"):
     parser.add_argument('--import-key', help='''Import a private key which will be stored 
                         encrypted in `privatekeyencrypted.json`)''', 
                         action = 'store_const', const = True, default = False)
-    parser.add_argument('--adventure-only', help='Only call adventure() and nothing else.', 
-                        action = 'store_const', const = True, default = False)
+    parser.add_argument('--actions', help='''All actions to take. Will do everything by default.
+                                             Select one or more from "adventure", "levelup", "gold", "cellar"''',
+                        nargs='*', default = ["adventure", "level_up", "claim_gold", "cellar"])
     args = parser.parse_args()
 
     print_intro()
@@ -83,15 +84,28 @@ if (__name__ == "__main__"):
 
     print("Looking for things to do ...")
 
-    for summoner in summoners:        
-        # Adventure (only if available)
-        summoner.adventure()
-        if not args.adventure_only:
-            # If possible, level up
+    # We process each action entirely before moving to the next one
+    # This is important as, this way, we can wait for tx status only once at the end of a batch
+    # This way, level_up will "see" the correct XP and claim_gold will "see" the correct level
+
+    if "adventure" in args.actions:
+        print("Checking adventures...")
+        for summoner in summoners:        
+            summoner.adventure()
+
+    if "level_up" in args.actions:    
+        print("Checking level-up...")
+        for summoner in summoners:
             summoner.level_up()
-            # If possible, claim gold
+    
+    if "claim_gold" in args.actions:
+        print("Checking gold claims...")
+        for summoner in summoners:
             summoner.claim_gold()
-            # If possible, farm The Cellar
+    
+    if "cellar" in args.actions:
+        print("Checking cellar loot...")
+        for summoner in summoners:
             summoner.go_cellar()
 
     print("\n")
