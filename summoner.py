@@ -1,5 +1,3 @@
-import contracts
-from web3 import Web3
 from colorama import Fore
 
 class Summoner:
@@ -22,14 +20,8 @@ class Summoner:
         # What we need to transact
         self.transacter = transacter
         self.contracts = transacter.contracts
-
-        # Populate summoner info by calling the rarity contract
-        summoner_info = self.transacter.get_summoner_info(id)
         self.token_id = id
-        self.class_id = summoner_info[2]
-        self.class_name = self.class_from_index(summoner_info[2])
-        self.level =  summoner_info[3]
-        self.xp = summoner_info[0] / 1e18
+        self.update_summoner_info()
         self.update_gold_balance()
         # TODO: lookup name in contract
         self.name = "A " + self.class_name + " (" + str(self.token_id) + ")"
@@ -42,15 +34,15 @@ class Summoner:
                 "\t" + xp_str.rjust(10, ' ') + " xp" + \
                 "\t" + str(round(self.gold)).rjust(6, ' ') + " gold"
 
-        
-    def update_lvl(self):
-        """Update level, typically after levelling up"""
-        self.level = self.contracts["summoner"].functions.level(self.token_id).call()
-
-    def update_xp(self):
-        """Update XP, typically after adventuring"""
-        self.xp = self.contracts["summoner"].functions.xp(self.token_id).call() / 1e18
     
+    def update_summoner_info(self):
+        """Update class, level and xp"""
+        summoner_info = self.contracts["summoner"].functions.summoner(self.token_id).call()
+        self.class_id = summoner_info[2]
+        self.class_name = self.class_from_index(summoner_info[2])
+        self.level =  summoner_info[3]
+        self.xp = summoner_info[0] / 1e18
+
     def update_gold_balance(self):
         self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
 
@@ -78,7 +70,7 @@ class Summoner:
         tx_success = self.transacter.sign_and_execute(adventure_fun, gas = 70000)
         if tx_success:
             print("The summoner came back with success from his adventure!")
-            self.update_xp()
+            self.update_summoner_info()
         else: 
             print("Transaction failed. The summoner prefers to stay at home")
         return tx_success
@@ -102,7 +94,7 @@ class Summoner:
         levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
         tx_success = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
         if tx_success:
-            self.update_lvl()
+            self.update_summoner_info()
             print(Fore.YELLOW + "He is now level " + str(self.level) + "!")
         else: 
             print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")

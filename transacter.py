@@ -1,8 +1,22 @@
 from web3 import Web3
-import contracts
+import requests
 
 class Transacter:
-    """Class in charge of perparing and signing transactions"""
+    """Class in charge of preparing and signing transactions"""
+
+    # Configuration constants
+    API_FTMSCAN_TOKEN = "VU7CVDPWW2GSFM7JWFCIP49AE9EPJVVSC4"
+
+    # Contracts adresses
+    contract_addresses = {
+        "rarity": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb",
+        "summoner": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb", # Same as rarity but friendly name
+        "gold": "0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2",
+        "cellar": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A"
+    }
+
+    # Contracts adress checksums
+    contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
     def __init__(self, address, private_key):
         self.address = address
@@ -10,18 +24,30 @@ class Transacter:
         self.w3 =  Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
         self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
         # Prepare all contracts only once
-        self.contracts = {cname: contracts.get_contract(self.w3, cname) for cname in contracts.contract_addresses.keys()}
+        self.contracts = {cname: self.get_contract(cname) for cname in self.contract_addresses.keys()}
         self.session_cost = 0
+
+
+    def get_contract(self, contract_name):
+        '''Get contract or raise a KeyError if contract isn't listed'''
+        return self.w3.eth.contract(address = self.contract_checksums[contract_name], 
+                               abi = self.get_abi(self.contract_addresses[contract_name]))
+
+
+    def get_abi(self, contract_address):
+        '''Get abi from contract address'''
+        abi_contract_url = "https://api.ftmscan.com/api?module=contract&action=getabi&address=" + \
+            contract_address + "&apikey=" + self.API_FTMSCAN_TOKEN
+        try:
+            res = requests.get(abi_contract_url)
+            res_json = res.json()
+            abi = res_json["result"]
+            return abi
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
 
     def timestamp(self):
         return self.w3.eth.get_block('latest')["timestamp"]
-
-    def get_summoner_info(self, id):
-        return self.contracts["summoner"].functions.summoner(id).call()
-
-    def execute(self, call):
-        adventure_fun = self.contracts["summoner"].functions.adventure(self.token_id)
-        self.transacter.sign_and_execute(adventure_fun, gas = 70000)
 
     def sign_and_execute(self, w3fun, gas, wait_for_receipt = True, wait_timeout = 360):
         """

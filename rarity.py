@@ -5,17 +5,17 @@ import argparse
 # Local modules
 import key
 from transacter import Transacter
-import contracts
+from list_summoners import list_summoners
 
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
 def print_intro():
-    print(Fore.RED + 'Welcome to Rarity bot V0.1\n')
+    print(Fore.RED + 'Welcome to Rarity bot V1.0\n')
     print("This script will:")
-    print("- Automatically call adventure function if your summoner is ready")
-    print("- Automatically level up your summoners")
-    print("- Automatically claim gold")
-    print("- If your summoner can, automatically makes him do The Cellar dungeon")
+    print("- Send your summoners on adventures, if they're ready")
+    print("- Level up your summoners when it's time")
+    print("- Claim gold on their behalf if any is available")
+    print("- Send your summoners to the Cellar dungeon, if they beat it")
     print("\n")
 
 
@@ -58,8 +58,10 @@ if (__name__ == "__main__"):
     # Load account details from keyfile
     try:
         if args.password != '':
+            # If pwd was passed as arg, we use it
             private_key = key.load_private_key(args.keyfile, args.password)
         else:
+            # Otherwise we prompt the user to unlock the file
             private_key = key.unlock_private_key(args.keyfile)
         owner_address = key.load_address(args.keyfile)
     except key.InvalidInputError as e:
@@ -72,7 +74,7 @@ if (__name__ == "__main__"):
     transacter = Transacter(owner_address, private_key)
 
     print("Scanning for summoners...\n")
-    summoners = contracts.list_summoners(owner_address, transacter, verbose = True)
+    summoners = list_summoners(owner_address, transacter, verbose = True)
     print("\n")
 
     if not summoners:
