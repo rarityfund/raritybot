@@ -27,17 +27,17 @@ class Summoner:
         summoner_info = self.transacter.get_summoner_info(id)
         self.token_id = id
         self.class_id = summoner_info[2]
-        # TODO: make that a local lookup
         self.class_name = self.class_from_index(summoner_info[2])
         self.level =  summoner_info[3]
         self.xp = summoner_info[0] / 1e18
         self.update_gold_balance()
 
     def __str__(self):
+        xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
         return  str(self.token_id) + ": A " + \
                 self.class_name.ljust(10, ' ') + \
                 "\t level " + str(self.level).rjust(2, ' ') + \
-                "\t" + str(round(self.xp)).rjust(5, ' ') + " xp" + \
+                "\t" + xp_str.rjust(10, ' ') + " xp" + \
                 "\t" + str(round(self.gold)).rjust(6, ' ') + " gold"
 
         
@@ -84,7 +84,13 @@ class Summoner:
     def adventure(self):
         if self.check_adventure():
             self.force_adventure()
-            
+
+    def xp_required(self):
+        return self.level * (self.level + 1) / 2 * 1000
+
+    def fast_check_level_up(self):
+        return int(self.xp_required()) <= int(self.xp)
+
     def check_level_up(self):
         xp_required = self.contracts["summoner"].functions.xp_required(int(self.level)).call() / 1e18
         return int(xp_required) <= int(self.xp)
@@ -100,7 +106,8 @@ class Summoner:
             print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")
 
     def level_up(self):
-        if self.check_level_up():
+        # Note the fast check short circuits the long check if False
+        if self.fast_check_level_up() and self.check_level_up():
             self.force_level_up()
     
     def check_claim_gold(self):
