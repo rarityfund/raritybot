@@ -5,6 +5,19 @@ from colorama import Fore
 class Summoner:
     '''Summoners are characters in rarity'''
 
+    classes =  ["No class",
+                "Barbarian",
+                "Bard",
+                "Cleric",
+                "Druid",
+                "Fighter",
+                "Monk",
+                "Paladin",
+                "Ranger",
+                "Rogue",
+                "Sorcerer",
+                "Wizard"]
+
     def __init__(self, id, transacter):
         # What we need to transact
         self.transacter = transacter
@@ -40,7 +53,15 @@ class Summoner:
         self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
 
     def class_from_index(self, index):
-        '''Get class from index'''
+        '''Get class from index (local lookup)'''
+        try:
+          return self.classes[index]
+        except IndexError:
+            print("Invalid class ID")
+            return "N/A"
+
+    def class_from_index_remote(self, index):
+        '''Get class from index (remote lookup)'''
         summoner_class = self.contracts["summoner"].functions.classes(index).call()
         return summoner_class
 
