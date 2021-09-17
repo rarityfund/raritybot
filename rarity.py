@@ -10,7 +10,7 @@ from list_summoners import list_summoners
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
 def print_intro():
-    print(Fore.RED + 'Welcome to Rarity bot V1.0\n')
+    print(Fore.RED + 'Welcome to Rarity bot V1.1\n')
     print("This script will:")
     print("- Send your summoners on adventures, if they're ready")
     print("- Level up your summoners when it's time")
