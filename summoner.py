@@ -90,12 +90,11 @@ class Summoner:
         return int(xp_required) <= int(self.xp)
 
     def force_level_up(self):
-        print(Fore.WHITE + self.name + " is passing a new level!")
+        print(Fore.WHITE + self.name + " is trying to pass level " + str(self.level) + "!")
         levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
         tx_success = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
         if tx_success:
-            self.update_summoner_info()
-            print(Fore.YELLOW + "He is now level " + str(self.level) + "!")
+            print(Fore.YELLOW + "Level passed!")
         else: 
             print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")
 
