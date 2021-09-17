@@ -32,7 +32,8 @@ if (__name__ == "__main__"):
                         encrypted in `privatekeyencrypted.json`)''', 
                         action = 'store_const', const = True, default = False)
     parser.add_argument('-a', '--actions', help='''All actions to take. Will do everything by default.
-                                             Select one or more from "list", "adventure", "levelup", "gold", "cellar"''',
+                                                   Select one or more from 
+                                                   "list", "adventure", "levelup", "gold", "cellar", "check_gas"''',
                         nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
     parser.add_argument('-t', '--txmode', help='''How transactions are processed. 
                                             "legacy" to send them one by one and wait for the receipt each time.
@@ -77,6 +78,10 @@ if (__name__ == "__main__"):
 
     # The transacter will handle the signing and executing of transactions
     transacter = Transacter(owner_address, private_key, txmode = args.txmode)
+
+
+    if "check_gas" in args.actions:
+        transacter.print_gas_price()
 
     print("Scanning for summoners...\n")
     print_list = "list" in args.actions

@@ -114,3 +114,17 @@ class Transacter:
         # Reset pending tx and return all receipts
         self.pending_transactions = []
         return receipts
+
+    def print_gas_price(self):
+        max_gas_per_action = {
+            "adventure": 70000,
+            "level_up": 70000,
+            "claim_gold": 120000,
+            "cellar": 120000
+        }
+        print("Max cost per action:")
+        for action in max_gas_per_action:
+            max_cost = max_gas_per_action[action] * self.get_gas_price()
+            print(action.ljust(10, ' ') + " => " + str(max_cost) + "FTM")
+        print("\n")
+        
