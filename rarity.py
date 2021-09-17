@@ -32,8 +32,8 @@ if (__name__ == "__main__"):
                         encrypted in `privatekeyencrypted.json`)''', 
                         action = 'store_const', const = True, default = False)
     parser.add_argument('-a', '--actions', help='''All actions to take. Will do everything by default.
-                                             Select one or more from "adventure", "levelup", "gold", "cellar"''',
-                        nargs='*', default = ["adventure", "level_up", "claim_gold", "cellar"])
+                                             Select one or more from "list", "adventure", "levelup", "gold", "cellar"''',
+                        nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
     parser.add_argument('-t', '--txmode', help='''How transactions are processed. 
                                             "legacy" to send them one by one and wait for the receipt each time.
                                             "batch" to send tx in batches and wait less often''',
@@ -79,7 +79,8 @@ if (__name__ == "__main__"):
     transacter = Transacter(owner_address, private_key, txmode = args.txmode)
 
     print("Scanning for summoners...\n")
-    summoners = list_summoners(owner_address, transacter, verbose = True)
+    print_list = "list" in args.actions
+    summoners = list_summoners(owner_address, transacter, verbose = print_list)
     print("\n")
 
     if not summoners:
