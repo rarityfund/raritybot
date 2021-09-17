@@ -28,11 +28,16 @@ if (__name__ == "__main__"):
     parser.add_argument('-p', '--password', help='''Password to decrypt the keyfile. 
                         Be aware it will be available in plaintext in the shell history. 
                         Use of interactive login is preferable if possible.''', default = '')
-    parser.add_argument('--import-key', help='''Import a private key which will be stored 
+    parser.add_argument('-i', '--import-key', help='''Import a private key which will be stored 
                         encrypted in `privatekeyencrypted.json`)''', 
                         action = 'store_const', const = True, default = False)
-    parser.add_argument('--adventure-only', help='Only call adventure() and nothing else.', 
-                        action = 'store_const', const = True, default = False)
+    parser.add_argument('-a', '--actions', help='''All actions to take. Will do everything by default.
+                                             Select one or more from "list", "adventure", "levelup", "gold", "cellar"''',
+                        nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
+    parser.add_argument('-t', '--txmode', help='''How transactions are processed. 
+                                            "legacy" to send them one by one and wait for the receipt each time.
+                                            "batch" to send tx in batches and wait less often''',
+                        default = "legacy")
     args = parser.parse_args()
 
     print_intro()
@@ -71,10 +76,11 @@ if (__name__ == "__main__"):
     print(Fore.WHITE + "ADDRESS FOUND, Opening " + owner_address + "\n")
 
     # The transacter will handle the signing and executing of transactions
-    transacter = Transacter(owner_address, private_key)
+    transacter = Transacter(owner_address, private_key, txmode = args.txmode)
 
     print("Scanning for summoners...\n")
-    summoners = list_summoners(owner_address, transacter, verbose = True)
+    print_list = "list" in args.actions
+    summoners = list_summoners(owner_address, transacter, verbose = print_list)
     print("\n")
 
     if not summoners:
@@ -83,16 +89,36 @@ if (__name__ == "__main__"):
 
     print("Looking for things to do ...")
 
-    for summoner in summoners:        
-        # Adventure (only if available)
-        summoner.adventure()
-        if not args.adventure_only:
-            # If possible, level up
+    # We process each action entirely before moving to the next one
+    # This is important as, this way, we can wait for tx status only once at the end of a batch
+    # This way, level_up will "see" the correct XP and claim_gold will "see" the correct level
+
+    if "adventure" in args.actions:
+        print("Checking adventures...")
+        for summoner in summoners:        
+            summoner.adventure()
+        transacter.wait_for_pending_transations()
+
+    if "level_up" in args.actions:
+        print("Checking level-up...")
+        for summoner in summoners:
             summoner.level_up()
-            # If possible, claim gold
+        transacter.wait_for_pending_transations()
+    
+    if "claim_gold" in args.actions:
+        print("Checking gold claims...")
+        for summoner in summoners:
             summoner.claim_gold()
-            # If possible, farm The Cellar
+        transacter.wait_for_pending_transations()
+
+    if "cellar" in args.actions:
+        print("Checking cellar loot...")
+        for summoner in summoners:
             summoner.go_cellar()
+        transacter.wait_for_pending_transations()
+    
+    # Wait for all tx to complete
+    transacter.wait_for_pending_transations()
 
     print("\n")
     print(Fore.RED + "Our tasks are done now, time to rest, goodbye")
