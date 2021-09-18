@@ -74,7 +74,7 @@ class Transacter:
         
         current_gas_price = self.get_gas_price()
         estimated_cost = gas * current_gas_price
-        print("Transaction sent, paying up to " + str(estimated_cost) + "FTM, id: " + tx_hash)
+        print("Transaction sent, paying up to " + str(round(estimated_cost, 6)) + " FTM, id: " + tx_hash)
         
         if self.txmode == "batch":
             self.pending_transactions.append({"tx_hash": tx_hash, "gas_price": current_gas_price})
@@ -97,7 +97,7 @@ class Transacter:
 
         if tx_receipt.status == 1:
             actual_cost = tx_receipt.gasUsed * gas_price_for_log
-            print(Fore.GREEN + "Tx success, actual cost " + str(actual_cost) + "FTM, id: " + str(tx_hash))
+            print(Fore.GREEN + "Tx success, actual cost " + str(round(actual_cost, 6)) + " FTM, id: " + str(tx_hash))
             self.session_cost += actual_cost
         else:
             print(Fore.RED + "Tx failed (status = " + str(tx_receipt.status) + ")")

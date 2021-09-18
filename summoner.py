@@ -23,17 +23,18 @@ class Summoner:
         self.token_id = id
         self.update_summoner_info()
         self.update_gold_balance()
-        # TODO: lookup name in contract
-        self.name = "A " + self.class_name + " (" + str(self.token_id) + ")"
 
     def __str__(self):
+        return "A " + self.class_name + " (" + str(self.token_id) + ")"
+
+    def get_details(self):
+        """Get a string full of details about the summoner"""
         xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
         return  str(self.token_id) + ": A " + \
                 self.class_name.ljust(10, ' ') + \
                 "\t level " + str(self.level).rjust(2, ' ') + \
                 "\t" + xp_str.rjust(10, ' ') + " xp" + \
                 "\t" + str(round(self.gold)).rjust(6, ' ') + " gold"
-
     
     def update_summoner_info(self):
         """Update class, level and xp"""
@@ -65,7 +66,7 @@ class Summoner:
         return current_time > next_time_available
 
     def force_adventure(self):
-        print(Fore.WHITE + self.name + " has gone on an adventure!")
+        print(Fore.WHITE + str(self) + " has gone on an adventure!")
         adventure_fun = self.contracts["summoner"].functions.adventure(self.token_id)
         tx_success = self.transacter.sign_and_execute(adventure_fun, gas = 70000)
         if tx_success:
@@ -90,7 +91,7 @@ class Summoner:
         return int(xp_required) <= int(self.xp)
 
     def force_level_up(self):
-        print(Fore.WHITE + self.name + " is trying to pass level " + str(self.level) + "!")
+        print(Fore.WHITE + str(self) + " is trying to pass level " + str(self.level) + "!")
         levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
         tx_success = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
         if tx_success:
@@ -108,7 +109,7 @@ class Summoner:
         return claimable_gold > 0
 
     def force_claim_gold(self):
-        print(Fore.WHITE + self.name + " is claiming gold")
+        print(Fore.WHITE + str(self) + " is claiming gold")
         claim_gold_fun = self.contracts["gold"].functions.claim(self.token_id)
         tx_success = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000)
         if tx_success:
@@ -131,7 +132,7 @@ class Summoner:
           return False
 
     def force_go_cellar(self):
-        print(Fore.WHITE + self.name + " is going to The Cellar")
+        print(Fore.WHITE + str(self) + " is going to The Cellar")
         cellar_fun = self.contracts["cellar"].functions.adventure(self.token_id)
         tx_success = self.transacter.sign_and_execute(cellar_fun, gas = 120000)
         if tx_success:

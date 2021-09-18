@@ -37,6 +37,6 @@ def list_summoners(address, transacter, verbose = True):
         summoner = Summoner(id, transacter)
         summoners.append(summoner)
         if verbose:
-            print(Fore.LIGHTGREEN_EX + str(summoner))
+            print(Fore.LIGHTGREEN_EX + summoner.get_details())
     return summoners
 
