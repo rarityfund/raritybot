@@ -14,8 +14,6 @@ This bot will automatically:
 - Make your summoners go into an adventure
 - Farm The Cellar dungeon if there is loot to claim for each summoner
 
-This bot is made to work with one address only.  Delete (or rename) the `privatekeyencrypted.json` file to import a new private key if you want this bot to run on another address. Or you can copy the script to another folder and import another private key.
-
 ## Installation
 
 You need python and pip3 installed on your host. 
@@ -63,7 +61,7 @@ You're supposed to run this script once a day but the script won't take any acti
 The rarity bot can take a number of optional arguments. Run `python3 rarity.py --help` for an up-to-date documentation.
 
 ```
-usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [--import-key] [--adventure-only]
+usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [-i] [-a [ACTIONS [ACTIONS ...]]] [-t TXMODE]
 
 Manage your rarity summoners
 
@@ -72,10 +70,12 @@ optional arguments:
   -k KEYFILE, --keyfile KEYFILE
                         Path to encrypted keyfile
   -p PASSWORD, --password PASSWORD
-                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the shell history. Use of
-                        interactive login is preferable if possible.
-  --import-key          Import a private key which will be stored encrypted in `privatekeyencrypted.json`)
-  --adventure-only      Only call adventure() and nothing else.
+                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the shell history. Use of interactive login is preferable if possible.
+  -i, --import-key      Import a private key which will be stored encrypted in `privatekeyencrypted.json`)
+  -a [ACTIONS [ACTIONS ...]], --actions [ACTIONS [ACTIONS ...]]
+                        All actions to take. Will do everything by default. Select one or more from "list", "adventure", "levelup", "gold", "cellar"
+  -t TXMODE, --txmode TXMODE
+                        How transactions are processed. "legacy" to send them one by one and wait for the receipt each time. "batch" to send tx in batches and wait less often
 ```
 
 
@@ -86,9 +86,19 @@ python3 rarity.py --keyfile key1.json
 python3 rarity.py --keyfile key2.json
 ```
 
-To run the bot in a non-interactive setting (e.g. a cron job), you can use `--password "PWD"` to pass the password and skip the interactive login. Note this is not recommended unless you know what you're doing, as the password will then be available in plaintext in the shell history.
+To run the bot in a non-interactive setting (e.g. a cron job), you can use `--password "PWD"` to pass the password and skip the interactive login. 
+Note this is not recommended unless you know what you're doing, as the password will then be available in plaintext in the shell history. 
+One way to avoid that is to use an environment variable and call `python3 rarity.py --keyfile /path/to/key.json --password "$KEY_PWD"`.
 
-The `--adventure-only` flag is useful especially if you have a lot of summoners and want to send them adventuring fast.
+You can control the actions taken by the bot on a very granular level using `--actions action1 action2 etc`. 
+The available actions are:
+
+- "list": Print the list of summoners
+- "adventure": Send summoners on adventure (when possible)
+- "level_up": Level up summoners who can
+- "claim_gold": Claim gold for summoners who can
+- "cellar": Send summoners to the Cellar dungeon (when expected loot > 0)
+
 
 ## Warning about fees
 
