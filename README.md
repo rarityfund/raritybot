@@ -1,4 +1,4 @@
-# Rarity bot v1.0
+# Rarity bot v1.1
 
 ___________________________________________________
 
@@ -61,7 +61,8 @@ You're supposed to run this script once a day but the script won't take any acti
 The rarity bot can take a number of optional arguments. Run `python3 rarity.py --help` for an up-to-date documentation.
 
 ```
-usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [-i] [-a [ACTIONS [ACTIONS ...]]] [-t TXMODE]
+usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [-i] [-a [ACTIONS [ACTIONS ...]]]
+                 [-t TXMODE]
 
 Manage your rarity summoners
 
@@ -70,12 +71,19 @@ optional arguments:
   -k KEYFILE, --keyfile KEYFILE
                         Path to encrypted keyfile
   -p PASSWORD, --password PASSWORD
-                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the shell history. Use of interactive login is preferable if possible.
-  -i, --import-key      Import a private key which will be stored encrypted in `privatekeyencrypted.json`)
+                        Password to decrypt the keyfile. Be aware it will be available in
+                        plaintext in the shell history. Use of interactive login is
+                        preferable if possible.
+  -i, --import-key      Import a private key which will be stored encrypted in
+                        `privatekeyencrypted.json`)
   -a [ACTIONS [ACTIONS ...]], --actions [ACTIONS [ACTIONS ...]]
-                        All actions to take. Will do everything by default. Select one or more from "list", "adventure", "levelup", "gold", "cellar"
+                        All actions to take. Will do everything by default. Select one or
+                        more from "list", "adventure", "level_up", "claim_gold", "cellar",
+                        "check_gas"
   -t TXMODE, --txmode TXMODE
-                        How transactions are processed. "legacy" to send them one by one and wait for the receipt each time. "batch" to send tx in batches and wait less often
+                        How transactions are processed. "legacy" to send them one by one
+                        and wait for the receipt each time. "batch" to send tx in batches
+                        and wait less often
 ```
 
 
