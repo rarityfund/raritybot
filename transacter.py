@@ -2,6 +2,7 @@ from colorama.ansi import Fore
 from web3 import Web3
 import web3
 import requests
+from summoner import Summoner 
 
 class Transacter:
     """Class in charge of preparing and signing transactions"""
@@ -130,4 +131,34 @@ class Transacter:
             max_cost = max_gas_per_action[action] * self.get_gas_price()
             print(action.ljust(10, ' ') + " => " + str(max_cost) + "FTM")
         print("\n")
-        
+
+    def summon_from_class_name(self, class_name):
+        """Summon a new summoner of the specified class. Returns the summoner ID"""
+        try:
+          class_id = Summoner.classes.index(class_name)
+        except ValueError:
+            print("Invalid class name: aborting")
+            return False
+        return self.summon(self, class_id)
+
+    def summon(self, class_id):
+        """Summon a new summoner of the specified class. Returns the summoner ID"""
+        try:
+            class_name = Summoner.classes[class_id]
+        except IndexError:
+            print("Invalid class id: aborting")
+            return None 
+        summon_fun = self.contracts["summoner"].functions.summon(class_id)
+        tx_status = self.sign_and_execute(summon_fun, gas = 150000)
+        # We wait so we can get the summoner ID from the receipt
+        tx_receipt = self.wait_for_tx(tx_status["hash"])
+        try:
+            receipt_data = str(tx_receipt.logs[1].data)
+            receipt_class_id = int(receipt_data[(1+2):(64+2)], 16)
+            receipt_token_id = int(receipt_data[(64+2):], 16)
+            receipt_class_name = Summoner.classes[receipt_class_id]
+            print(Fore.GREEN + "Summoned new " + receipt_class_name + " (ID=" + str(receipt_token_id) + ")")
+            return receipt_token_id
+        except:
+            print("Could not confirm summoner token_id")
+            return None
