@@ -33,7 +33,7 @@ if (__name__ == "__main__"):
                         action = 'store_const', const = True, default = False)
     parser.add_argument('-a', '--actions', help='''All actions to take. Will do everything by default.
                                                    Select one or more from 
-                                                   "list", "adventure", "levelup", "gold", "cellar", "check_gas"''',
+                                                   "list", "adventure", "level_up", "claim_gold", "cellar", "check_gas"''',
                         nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
     parser.add_argument('-t', '--txmode', help='''How transactions are processed. 
                                             "legacy" to send them one by one and wait for the receipt each time.
