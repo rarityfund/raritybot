@@ -59,8 +59,10 @@ class Transacter:
 
     def sign_and_execute(self, w3fun, gas):
         """
-        Sign and execute a web3 function call. Returns status as a bool.
-        If wait_for_receipt is False, returns True, as if the tx was successful.
+        Sign and execute a web3 function call. 
+        Returns a dict with {status, tx_hash, tx_receipt}.
+        Status can be one of of "pending", "success" or "failure".
+        For pending tx, tx_receipt will be `None`.
         """
         tx = w3fun.buildTransaction({
             'chainId': 250,
@@ -78,12 +80,13 @@ class Transacter:
         
         if self.txmode == "batch":
             self.pending_transactions.append({"tx_hash": tx_hash, "gas_price": current_gas_price})
-            return True
+            return {"status": "pending", "hash": tx_hash, "receipt": None}
         else:
             # Check receipt status
             print("Waiting for receipt...")
             tx_receipt = self.wait_for_tx(tx_hash, gas_price_for_log = current_gas_price)
-            return tx_receipt.status == 1
+            tx_status = "success" if tx_receipt.status == 1 else "failure"
+            return {"status": tx_status, "hash": tx_hash, "receipt": tx_receipt}
 
 
     def wait_for_tx(self, tx_hash, gas_price_for_log, wait_timeout = 360):
