@@ -12,7 +12,7 @@ from summoning import SummoningEngine
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
 def print_intro():
-    print(Fore.RED + 'Welcome to Rarity bot V1.2.0')
+    print(Fore.RED + 'Welcome to Rarity bot v1.2.0.9000 (devel version)')
 
 def create_parser():
     parser = argparse.ArgumentParser(description='Manage your rarity summoners')
@@ -61,7 +61,7 @@ def create_parser():
                         help='''Json-formatted attributes to assign after summoning. Only used when command is "summon".
                         If not provided, attributes won't be assigned. Should look like: 
                         '{"str":8, "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. 
-                        The assignment must cost 32 AP to buy to be valid.
+                        The assignment must cost 32 AP to buy to be valid (you will be warned if it's not the case).
                         ''',
                         default = "")
     parser.add_argument('-n', '--count', help='Number of summoners to create if command is "summon". Default is 1',

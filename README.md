@@ -1,4 +1,4 @@
-# Rarity bot v1.2.0
+# Rarity bot v1.2.0.9000 (DEVEL version)
 
 ___________________________________________________
 
@@ -63,7 +63,7 @@ Beyond "run", the bot can also perform other commands:
 - "run" to run actions (by default, adenture, level up, etc). The actions are configurable with `--actions`
 - "list" to simply list the summoners
 - "check_gas" to print the price in FTM of common actions
-- "summon" to create new summoners. Requires the additional argument `--class`.
+- "summon" to create new summoners. Requires the additional argument `--class` and takes optional arguments `-n` (to create more than one) and `--attributes` to set their attributes.
 
 Examples:
 
@@ -83,8 +83,8 @@ python3 rarity.py run --actions adventure cellar
 python3 rarity.py summon --class Bard
 # Create 2 Fighters
 python3 rarity.py summon --class Fighter -n 2
-# Create 3 Barbarians (class ID 1) in batched tx (faster)
-python3 rarity.py summon --class 1 -n 3 --txmode batch
+# Create 3 Barbarians (class ID 1) in batched tx (faster) and set their attributes 
+python3 rarity.py summon --class 1 -n 3 --txmode batch --attributes '{"str":16,"dex":12,"const":16,"int":8,"wis":10,"cha":14}'
 ```
 
 
@@ -94,38 +94,39 @@ The rarity bot can take a number of optional arguments. Run `python3 rarity.py -
 
 ```
 usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [--import-key] [--txmode TXMODE]
-                 [-a [ACTIONS [ACTIONS ...]]] [--class SUMMONER_CLASS] [-n COUNT]
+                 [-a [ACTIONS [ACTIONS ...]]] [--class SUMMONER_CLASS] [--attributes ATTRIBUTES] [-n COUNT]
                  {run,list,summon,check_gas}
 
 Manage your rarity summoners
 
 positional arguments:
   {run,list,summon,check_gas}
-                        Main command: "run" to run the bot (configure with --actions), "list"
-                        to simply list summoners, "summon" to create new summoners (configure
-                        with -n and --class) "check_gas" to show price in FTM of common
-                        actions,
+                        Main command: "run" to run the bot (configure with --actions), "list" to simply list
+                        summoners, "summon" to create new summoners (configure with -n and --class)
+                        "check_gas" to show price in FTM of common actions,
 
 optional arguments:
   -h, --help            show this help message and exit
   -k KEYFILE, --keyfile KEYFILE
                         Path to encrypted keyfile
   -p PASSWORD, --password PASSWORD
-                        Password to decrypt the keyfile. Be aware it will be available in
-                        plaintext in the shell history. Use of interactive login is
-                        preferable if possible.
-  --import-key          Import a private key which will be stored encrypted in
-                        `privatekeyencrypted.json`
-  --txmode TXMODE       How transactions are processed. "legacy" to send them one by one and
-                        wait for the receipt each time. "batch" to send tx in batches and
-                        wait less often
+                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the
+                        shell history. Use of interactive login is preferable if possible.
+  --import-key          Import a private key which will be stored encrypted in `privatekeyencrypted.json`
+  --txmode TXMODE       How transactions are processed. "legacy" to send them one by one and wait for the
+                        receipt each time. "batch" to send tx in batches and wait less often
   -a [ACTIONS [ACTIONS ...]], --actions [ACTIONS [ACTIONS ...]]
-                        All actions to take. Will do everything by default. Select one or
-                        more from "list" (list Summoners on address), "adventure",
-                        "level_up", "claim_gold", "cellar" (send to cellar dungeon)
+                        All actions to take. Will do everything by default. Select one or more from "list"
+                        (list Summoners on address), "adventure", "level_up", "claim_gold", "cellar" (send to
+                        cellar dungeon)
   --class SUMMONER_CLASS
-                        Class used for summoning. Required if command is "summon". Can be
-                        class ID (1 to 11) or class name (e.g. "Bard").
+                        Class used for summoning. Required if command is "summon". Can be class ID (1 to 11)
+                        or class name (e.g. "Bard").
+  --attributes ATTRIBUTES
+                        Json-formatted attributes to assign after summoning. Only used when command is
+                        "summon". If not provided, attributes won't be assigned. Should look like: '{"str":8,
+                        "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. The assignment must cost 32 AP to
+                        buy to be valid (you will be warned if it's not the case).
   -n COUNT, --count COUNT
                         Number of summoners to create if command is "summon". Default is 1
 ```
