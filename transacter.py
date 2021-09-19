@@ -21,7 +21,9 @@ class Transacter:
     # Contracts adress checksums
     contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
-    def __init__(self, address, private_key, txmode = "legacy"):
+    
+    def __init__(self, address, private_key = None, txmode = "legacy"):
+        """Create a transacter. If private key is not given, won't be able to sign anything but can still read contracts."""
         self.address = address
         self.private_key = private_key
         self.txmode = txmode
@@ -65,6 +67,8 @@ class Transacter:
         Status can be one of of "pending", "success" or "failure".
         For pending tx, tx_receipt will be `None`.
         """
+        if not self.private_key:
+            raise PermissionError("Private key not provided!")
         tx = w3fun.buildTransaction({
             'chainId': 250,
             'gas': gas,
@@ -121,15 +125,17 @@ class Transacter:
 
     def print_gas_price(self):
         max_gas_per_action = {
+            "summon": 150000,
             "adventure": 70000,
             "level_up": 70000,
             "claim_gold": 120000,
             "cellar": 120000
         }
-        print("Max cost per action:")
+        print("Gas price =", self.get_gas_price() * 1e9, "gwei\n")
+        print("Max cost per action in FTM:")
         for action in max_gas_per_action:
             max_cost = max_gas_per_action[action] * self.get_gas_price()
-            print(action.ljust(10, ' ') + " => " + str(max_cost) + "FTM")
+            print(action.ljust(10, ' ') + " => " + str(round(max_cost, 6)) + " FTM")
 
     def summon_from_class(self, summoner_class):
         """Summon a new summoner of the specified class ID or class name. 

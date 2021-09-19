@@ -60,6 +60,29 @@ def create_parser():
                         default = 1, type = int)
     return parser
 
+def get_address_from_args(args):
+    try:
+        owner_address = key.load_address(args.keyfile)
+    except key.InvalidInputError as e:
+        print(e)
+        exit()
+    print(Fore.WHITE + "ADDRESS FOUND, Opening " + owner_address + "\n")
+    return owner_address
+
+        
+def get_private_key_from_args(args):
+    try:
+        if args.password != '':
+            # If pwd was passed as arg, we use it
+            private_key = key.load_private_key(args.keyfile, args.password)
+        else:
+            # Otherwise we prompt the user to unlock the file
+            private_key = key.unlock_private_key(args.keyfile)
+    except key.InvalidInputError as e:
+        print(e)
+        exit()
+    return private_key
+
 if (__name__ == "__main__"):
 
     # Parsing CLI args
@@ -85,31 +108,35 @@ if (__name__ == "__main__"):
         """)
         exit()
            
-    # Load account details from keyfile
-    try:
-        if args.password != '':
-            # If pwd was passed as arg, we use it
-            private_key = key.load_private_key(args.keyfile, args.password)
-        else:
-            # Otherwise we prompt the user to unlock the file
-            private_key = key.unlock_private_key(args.keyfile)
-        owner_address = key.load_address(args.keyfile)
-    except key.InvalidInputError as e:
-        print(e)
-        exit()
-
-    print(Fore.WHITE + "ADDRESS FOUND, Opening " + owner_address + "\n")
-
+    # Create transacter from address and private_key (the latter only if we need to sign tx)
     # The transacter will handle the signing and executing of transactions
-    transacter = Transacter(owner_address, private_key, txmode = args.txmode)
+    owner_address = get_address_from_args(args)
+    if args.command in ["check_gas", "list"]:
+        # Don't need the private key for that
+        transacter = Transacter(owner_address, private_key = None, txmode = args.txmode)
+    else:
+        private_key = get_private_key_from_args(args)
+        transacter = Transacter(owner_address, private_key = private_key, txmode = args.txmode)
 
+
+    # Running the main command
+
+    ### CHECK GAS ---------------
     if args.command == "check_gas":
-        # Just printing gas costs and exiting
+        # Just printing gas price and action costs and exiting
         transacter.print_gas_price()
 
+    ### LIST SUMMONERS -----------
+    elif args.command == "list":
+        # Just listing summoner and exiting
+        list_summoners(owner_address, transacter, verbose = True)
+
+    ### SUMMON NEW SUMMONERS -----
     elif args.command == "summon":
-        # Summoning new summoners -- need class to be provided
+        # Summoning new summoners
+
         if not args.summoner_class:
+            # Class must be provided
             print("Error: need class to summon. Pass it with `--class`.")
         elif args.txmode == "batch":
             # In batch mode, we won't have the summoner ids until we get the receipts at the end
@@ -135,11 +162,9 @@ if (__name__ == "__main__"):
             for token_id in summoner_ids:
                 print(Summoner(token_id, transacter).get_details())
 
-    elif args.command == "list":
-        list_summoners(owner_address, transacter, verbose = True)
-
+    # RUN ACTIONS --------------
     elif args.command == "run":
-        print("Scanning for summoners...\n")
+        print("Scanning for summoners...")
         print_list = "list" in args.actions
         summoners = list_summoners(owner_address, transacter, verbose = print_list)
         print("\n")
