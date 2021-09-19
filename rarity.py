@@ -1,3 +1,4 @@
+from summoner import Summoner
 from colorama import Fore
 import os.path
 import argparse
@@ -50,6 +51,13 @@ def create_parser():
                                                    "cellar" (send to cellar dungeon)''',
                         nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
 
+    # Command SUMMON takes argument --class and optionally -n
+    parser.add_argument('--class', dest = "summoner_class", # cannot use 'class' as var name in python
+                        help='''Class used for summoning. Required if command is "summon".
+                                Can be class ID (1 to 11) or class name (e.g. "Bard").''',
+                        default = "")
+    parser.add_argument('-n', '--count', help='Number of summoners to create if command is "summon". Default is 1',
+                        default = 1, type = int)
     return parser
 
 if (__name__ == "__main__"):
@@ -96,10 +104,23 @@ if (__name__ == "__main__"):
     transacter = Transacter(owner_address, private_key, txmode = args.txmode)
 
     if args.command == "check_gas":
+        # Just printing gas costs and exiting
         transacter.print_gas_price()
     elif args.command == "summon":
-        print("Not implemented")
-        pass
+        # Summoning new summoners -- need class to be provided
+        if args.txmode == "batch":
+            print("Error: txmode 'batch' is not available for command 'summon'")
+        elif not args.summoner_class:
+            print("Error: need class to summon. Pass it with `--class`.")
+        else:
+            summoner_ids = []
+            for i in range(args.count):
+                print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
+                new_id = transacter.summon_from_class(args.summoner_class)
+                summoner_ids.append(new_id)
+            print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + "s" if len(summoner_ids) > 1 else "" + ":")
+            for token_id in summoner_ids:
+                print(Summoner(token_id, transacter).get_details())
     elif args.command == "list":
         list_summoners(owner_address, transacter, verbose = True)
     elif args.command == "run":
