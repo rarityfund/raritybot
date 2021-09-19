@@ -1,3 +1,5 @@
+import json
+from key import InvalidInputError
 from summoner import Summoner
 from colorama import Fore
 
@@ -45,3 +47,50 @@ class SummoningEngine:
             return {"token_id": receipt_token_id, "class_name": receipt_class_name}
         except:
             return None
+
+    def parse_attributes(self, attribute_str):
+        try:
+            attributes = json.loads(attribute_str)
+        except json.decoder.JSONDecodeError as e:
+            raise InvalidInputError("Invalid JSON spec for attributes: " + str(e))
+        
+        # Check keys: should be the 6 attributes
+        keys = [k for k in attributes.keys()]
+        expected_keys = ["str", "dex", "const", "int", "wis", "cha"]
+        if keys != expected_keys:
+            raise InvalidInputError("Attributes don't match. Expecting: str, dex, const, int, wis, cha")
+
+        # Check values: should be integers
+        try:
+            attributes_int = {k: int(attributes[k]) for k in attributes}
+        except ValueError as e:
+            raise InvalidInputError("Attributes are not integers: ", str(e))
+        
+        # Check point buy: should cost 32 points to buy
+        ap_needed = self.calculate_point_buy(attributes_int)
+        if ap_needed != 32:
+            raise InvalidInputError("Attributes should cost 32 AP to buy. Yours cost " + str(ap_needed) + " AP.")
+
+        return attributes_int
+
+    def calculate_point_buy(self, attributes):
+        try:
+            points_total = self.transacter.contracts["attributes"].functions.calculate_point_buy( 
+                attributes["str"], attributes["dex"], attributes["const"], 
+                attributes["int"], attributes["wis"], attributes["cha"]).call()
+        except:
+            points_total = 0
+        return points_total
+
+
+    def set_attributes(self, summoner_id, attributes):
+        if self.calculate_point_buy(attributes) != 32:
+            print("Error: invalid attribute assignment")
+            return None
+
+        print(Fore.WHITE + "Summoner " + str(summoner_id) + ": assigning attributes " + str(attributes))
+        point_buy_fun = self.transacter.contracts["attributes"].functions.point_buy(summoner_id, 
+        attributes["str"], attributes["dex"], attributes["const"], 
+        attributes["int"], attributes["wis"], attributes["cha"])
+
+        return self.transacter.sign_and_execute(point_buy_fun, gas = 130000)

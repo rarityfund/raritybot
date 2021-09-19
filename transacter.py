@@ -134,7 +134,8 @@ class Transacter:
             "adventure": 70000,
             "level_up": 70000,
             "claim_gold": 120000,
-            "cellar": 120000
+            "cellar": 120000,
+            "assign_attributes": 130000
         }
         print("Gas price =", self.get_gas_price() * 1e9, "gwei\n")
         print("Max cost per action in FTM:")

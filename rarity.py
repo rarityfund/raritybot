@@ -57,6 +57,13 @@ def create_parser():
                         help='''Class used for summoning. Required if command is "summon".
                                 Can be class ID (1 to 11) or class name (e.g. "Bard").''',
                         default = "")
+    parser.add_argument('--attributes', dest = "attributes",
+                        help='''Json-formatted attributes to assign after summoning. Only used when command is "summon".
+                        If not provided, attributes won't be assigned. Should look like: 
+                        '{"str":8, "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. 
+                        The assignment must cost 32 AP to buy to be valid.
+                        ''',
+                        default = "")
     parser.add_argument('-n', '--count', help='Number of summoners to create if command is "summon". Default is 1',
                         default = 1, type = int)
     return parser
@@ -137,9 +144,19 @@ if (__name__ == "__main__"):
         # Summoning new summoners
         summoning_engine = SummoningEngine(transacter)
 
+        # Parse attributes if provided
+        summoning_attributes = None
+        if args.attributes:
+            try:
+                summoning_attributes = summoning_engine.parse_attributes(args.attributes)
+            except key.InvalidInputError as e:
+                print(Fore.RED + str(e))
+                exit()
+
         if not args.summoner_class:
             # Class must be provided
             print("Error: need class to summon. Pass it with `--class`.")
+
         elif args.txmode == "batch":
             # In batch mode, we won't have the summoner ids until we get the receipts at the end
             for i in range(args.count):
@@ -147,12 +164,20 @@ if (__name__ == "__main__"):
                 summoning_engine.summon_from_class(args.summoner_class)
             receipts = transacter.wait_for_pending_transations()
             print(Fore.YELLOW + "Created " + str(len(receipts)) + " summoner" + "s" if len(receipts) > 1 else "" + ":")
+            summoner_ids = []
             for receipt in receipts:
                 summon_details = summoning_engine.get_details_from_summon_receipt(receipt)
                 if summon_details:
-                    print(print(Summoner(summon_details["token_id"], transacter).get_details()))
+                    print(Summoner(summon_details["token_id"], transacter).get_details())
+                    summoner_ids.append(summon_details["token_id"])
                 else:
-                    print("Could not get summon data")
+                    print("Could not get summon data - CANNOT ASSIGN ATTRIBUTES")
+            # Now assigning attributes if provided
+            if summoning_attributes:
+                for summoner_id in summoner_ids:
+                    summoning_engine.set_attributes(summoner_id, summoning_attributes)
+                receipts2 = transacter.wait_for_pending_transations()
+
         else:
             # Not in batch mode, so we get the summoner ids as we go
             summoner_ids = []
@@ -160,7 +185,10 @@ if (__name__ == "__main__"):
                 print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
                 new_id = summoning_engine.summon_from_class(args.summoner_class)
                 summoner_ids.append(new_id)
-            print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + "s" if len(summoner_ids) > 1 else "" + ":")
+                summoning_engine.set_attributes(new_id, summoning_attributes)
+            print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + \
+                  ("s" if len(summoner_ids) > 1 else "") + ":")
+            
             for token_id in summoner_ids:
                 print(Summoner(token_id, transacter).get_details())
 
