@@ -106,13 +106,26 @@ if (__name__ == "__main__"):
     if args.command == "check_gas":
         # Just printing gas costs and exiting
         transacter.print_gas_price()
+
     elif args.command == "summon":
         # Summoning new summoners -- need class to be provided
-        if args.txmode == "batch":
-            print("Error: txmode 'batch' is not available for command 'summon'")
-        elif not args.summoner_class:
+        if not args.summoner_class:
             print("Error: need class to summon. Pass it with `--class`.")
+        elif args.txmode == "batch":
+            # In batch mode, we won't have the summoner ids until we get the receipts at the end
+            for i in range(args.count):
+                print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
+                transacter.summon_from_class(args.summoner_class)
+            receipts = transacter.wait_for_pending_transations()
+            print(Fore.YELLOW + "Created " + str(len(receipts)) + " summoner" + "s" if len(receipts) > 1 else "" + ":")
+            for receipt in receipts:
+                summon_details = transacter.get_details_from_summon_receipt(receipt)
+                if summon_details:
+                    print(print(Summoner(summon_details["token_id"], transacter).get_details()))
+                else:
+                    print("Could not get summon data")
         else:
+            # Not in batch mode, so we get the summoner ids as we go
             summoner_ids = []
             for i in range(args.count):
                 print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
@@ -121,8 +134,10 @@ if (__name__ == "__main__"):
             print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + "s" if len(summoner_ids) > 1 else "" + ":")
             for token_id in summoner_ids:
                 print(Summoner(token_id, transacter).get_details())
+
     elif args.command == "list":
         list_summoners(owner_address, transacter, verbose = True)
+
     elif args.command == "run":
         print("Scanning for summoners...\n")
         print_list = "list" in args.actions
