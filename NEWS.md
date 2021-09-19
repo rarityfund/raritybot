@@ -7,6 +7,7 @@
   Class is needed but count is optional (will summon 1 bydefault). Compatible with `--txmode batch` for the industrial farmers.
 - Misc UI improvement:
     * Gas check now includes gas price and cost of summoning
+    * Time to next adventure and next cellar (+ cellar loot) now shown in summoer printing
 
 # raritybot v1.1
 
