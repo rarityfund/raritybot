@@ -2,6 +2,7 @@ from colorama.ansi import Fore
 from web3 import Web3
 import web3
 import requests
+from summoner import Summoner 
 
 class Transacter:
     """Class in charge of preparing and signing transactions"""
@@ -20,7 +21,9 @@ class Transacter:
     # Contracts adress checksums
     contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
-    def __init__(self, address, private_key, txmode = "legacy"):
+    
+    def __init__(self, address, private_key = None, txmode = "legacy"):
+        """Create a transacter. If private key is not given, won't be able to sign anything but can still read contracts."""
         self.address = address
         self.private_key = private_key
         self.txmode = txmode
@@ -59,9 +62,13 @@ class Transacter:
 
     def sign_and_execute(self, w3fun, gas):
         """
-        Sign and execute a web3 function call. Returns status as a bool.
-        If wait_for_receipt is False, returns True, as if the tx was successful.
+        Sign and execute a web3 function call. 
+        Returns a dict with {status, tx_hash, tx_receipt}.
+        Status can be one of of "pending", "success" or "failure".
+        For pending tx, tx_receipt will be `None`.
         """
+        if not self.private_key:
+            raise PermissionError("Private key not provided!")
         tx = w3fun.buildTransaction({
             'chainId': 250,
             'gas': gas,
@@ -74,16 +81,17 @@ class Transacter:
         
         current_gas_price = self.get_gas_price()
         estimated_cost = gas * current_gas_price
-        print("Transaction sent, paying up to " + str(estimated_cost) + "FTM, id: " + tx_hash)
+        print("Transaction sent, paying up to " + str(round(estimated_cost, 6)) + " FTM, id: " + tx_hash)
         
         if self.txmode == "batch":
             self.pending_transactions.append({"tx_hash": tx_hash, "gas_price": current_gas_price})
-            return True
+            return {"status": "pending", "hash": tx_hash, "receipt": None}
         else:
             # Check receipt status
             print("Waiting for receipt...")
             tx_receipt = self.wait_for_tx(tx_hash, gas_price_for_log = current_gas_price)
-            return tx_receipt.status == 1
+            tx_status = "success" if tx_receipt.status == 1 else "failure"
+            return {"status": tx_status, "hash": tx_hash, "receipt": tx_receipt}
 
 
     def wait_for_tx(self, tx_hash, gas_price_for_log, wait_timeout = 360):
@@ -97,7 +105,7 @@ class Transacter:
 
         if tx_receipt.status == 1:
             actual_cost = tx_receipt.gasUsed * gas_price_for_log
-            print(Fore.GREEN + "Tx success, actual cost " + str(actual_cost) + "FTM, id: " + str(tx_hash))
+            print(Fore.GREEN + "Tx success, actual cost " + str(round(actual_cost, 6)) + " FTM, id: " + str(tx_hash))
             self.session_cost += actual_cost
         else:
             print(Fore.RED + "Tx failed (status = " + str(tx_receipt.status) + ")")
@@ -117,14 +125,54 @@ class Transacter:
 
     def print_gas_price(self):
         max_gas_per_action = {
+            "summon": 150000,
             "adventure": 70000,
             "level_up": 70000,
             "claim_gold": 120000,
             "cellar": 120000
         }
-        print("Max cost per action:")
+        print("Gas price =", self.get_gas_price() * 1e9, "gwei\n")
+        print("Max cost per action in FTM:")
         for action in max_gas_per_action:
             max_cost = max_gas_per_action[action] * self.get_gas_price()
-            print(action.ljust(10, ' ') + " => " + str(max_cost) + "FTM")
-        print("\n")
-        
+            print(action.ljust(10, ' ') + " => " + str(round(max_cost, 6)) + " FTM")
+
+    def summon_from_class(self, summoner_class):
+        """Summon a new summoner of the specified class ID or class name. 
+           summoner_class can be either the ID or the class name. Returns the summoner ID"""
+        try:
+            class_id = int(summoner_class)
+        except ValueError:
+            try:
+                class_id = Summoner.classes.index(summoner_class)
+            except ValueError:
+                print("Invalid class name or ID: aborting")
+                return None 
+        return self.summon(class_id)
+
+    def summon(self, class_id):
+        """Summon a new summoner of the specified class. Returns the summoner ID"""
+        try:
+            class_name = Summoner.classes[class_id]
+        except IndexError:
+            print("Invalid class id: aborting")
+            return None 
+        summon_fun = self.contracts["summoner"].functions.summon(class_id)
+        tx_status = self.sign_and_execute(summon_fun, gas = 150000)
+        details = self.get_details_from_summon_receipt(tx_status["receipt"])
+        if details:
+            print(Fore.GREEN + "Summoned new " + details["class_name"] + " (ID=" + str(details["token_id"]) + ")")
+            return details["token_id"]
+        else:
+            print("Could not confirm summoner token_id")
+            return None
+
+    def get_details_from_summon_receipt(self, receipt):
+        try:
+            receipt_data = str(receipt.logs[1].data)
+            receipt_class_id = int(receipt_data[(1+2):(64+2)], 16)
+            receipt_token_id = int(receipt_data[(64+2):], 16)
+            receipt_class_name = Summoner.classes[receipt_class_id]
+            return {"token_id": receipt_token_id, "class_name": receipt_class_name}
+        except:
+            return None
