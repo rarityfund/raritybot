@@ -1,12 +1,13 @@
-from summoner import Summoner
 from colorama import Fore
 import os.path
 import argparse
 
 # Local modules
 import key
+from summoner import Summoner
 from transacter import Transacter
 from list_summoners import list_summoners
+from summoning import SummoningEngine
 
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
@@ -134,6 +135,7 @@ if (__name__ == "__main__"):
     ### SUMMON NEW SUMMONERS -----
     elif args.command == "summon":
         # Summoning new summoners
+        summoning_engine = SummoningEngine(transacter)
 
         if not args.summoner_class:
             # Class must be provided
@@ -142,11 +144,11 @@ if (__name__ == "__main__"):
             # In batch mode, we won't have the summoner ids until we get the receipts at the end
             for i in range(args.count):
                 print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
-                transacter.summon_from_class(args.summoner_class)
+                summoning_engine.summon_from_class(args.summoner_class)
             receipts = transacter.wait_for_pending_transations()
             print(Fore.YELLOW + "Created " + str(len(receipts)) + " summoner" + "s" if len(receipts) > 1 else "" + ":")
             for receipt in receipts:
-                summon_details = transacter.get_details_from_summon_receipt(receipt)
+                summon_details = summoning_engine.get_details_from_summon_receipt(receipt)
                 if summon_details:
                     print(print(Summoner(summon_details["token_id"], transacter).get_details()))
                 else:
@@ -156,7 +158,7 @@ if (__name__ == "__main__"):
             summoner_ids = []
             for i in range(args.count):
                 print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
-                new_id = transacter.summon_from_class(args.summoner_class)
+                new_id = summoning_engine.summon_from_class(args.summoner_class)
                 summoner_ids.append(new_id)
             print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + "s" if len(summoner_ids) > 1 else "" + ":")
             for token_id in summoner_ids:
