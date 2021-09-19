@@ -11,7 +11,7 @@ from list_summoners import list_summoners
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
 def print_intro():
-    print(Fore.RED + 'Welcome to Rarity bot V1.1')
+    print(Fore.RED + 'Welcome to Rarity bot V1.2.0')
 
 def create_parser():
     parser = argparse.ArgumentParser(description='Manage your rarity summoners')

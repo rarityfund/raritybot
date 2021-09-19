@@ -1,4 +1,4 @@
-# raritybot v1.2
+# raritybot v1.2.0
 
 - Add "command" as positional argument. Run the traditional script with `python3 rarity.py run`.
   New commands include "run", "list", "check_gas", "summon" and will include "craft" at some point.
