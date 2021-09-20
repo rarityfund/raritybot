@@ -30,14 +30,15 @@ class Summoner:
     def get_details(self):
         """Get a string full of details about the summoner"""
         xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
-        return  str(self.token_id) + ": A " + \
+        return  str(self.token_id).ljust(11) + ": A " + \
                 self.class_name.ljust(10, ' ') + \
                 "\t level " + str(self.level).rjust(2, ' ') + \
                 "\t" + xp_str.rjust(10, ' ') + " xp" + \
                 "\t" + str(round(self.gold)).rjust(6, ' ') + " gold" + \
+                "\t" + str(self.get_balance_craft1()).rjust(3, ' ') + " CM1" + \
                 "\t" + "Next Adv: " + self.seconds_to_hms(self.time_to_next_adventure()) + \
                 "\t" + "Next Cellar: " + self.seconds_to_hms(self.time_to_next_cellar()) + \
-                " (" + str(self.expected_cellar_loot()) + " loot)"
+                " (+" + str(self.expected_cellar_loot()) + " CM1)"
                 
     @staticmethod
     def seconds_to_hms(secs):
@@ -146,3 +147,6 @@ class Summoner:
             tx_status = self.transacter.sign_and_execute(cellar_fun, gas = 120000)
             if tx_status["status"] == "success":
                 print("The summoner came back from The Cellar with success !")
+
+    def get_balance_craft1(self):
+        return self.transacter.contracts["craft1"].functions.balanceOf(self.token_id).call()
