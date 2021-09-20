@@ -58,8 +58,9 @@ def is_valid_private_key(private_key):
 def store_private_key(private_key, password, filepath):
     '''Encrypt key with password and store it at filepath'''
     keystore_dict = Account.encrypt(private_key, password)
-    with open(filepath, "x") as f:
+    with open(filepath, mode="w") as f:
         json.dump(keystore_dict, f)
+    return filepath
 
 def load_private_key(filepath, password):
     '''Load encrypted private key from file. May raise InvalidInputError.'''
@@ -91,3 +92,9 @@ def load_address(filepath):
         owner_address = "0x" + json_dump['address']
     return owner_address
 
+def change_password(filepath):
+    '''Re-encrypt private key with a new password'''
+    private_key = unlock_private_key(filepath)
+    new_pwd = request_new_password()
+    store_private_key(private_key, password=new_pwd, filepath=filepath)
+    return filepath
