@@ -193,7 +193,6 @@ if (__name__ == "__main__"):
 
     # RUN ACTIONS --------------
     elif args.command == "run":
-        print("Scanning for summoners...")
         print_list = "list" in args.actions
         summoners = list_summoners(owner_address, transacter, verbose = print_list)
         print("\n")

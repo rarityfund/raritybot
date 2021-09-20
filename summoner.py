@@ -30,26 +30,28 @@ class Summoner:
     def get_details(self):
         """Get a string full of details about the summoner"""
         xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
-        return  str(self.token_id).ljust(11) + ": A " + \
-                self.class_name.ljust(10, ' ') + \
-                "\t level " + str(self.level).rjust(2, ' ') + \
-                "\t" + xp_str.rjust(10, ' ') + " xp" + \
-                "\t" + str(round(self.gold)).rjust(6, ' ') + " gold" + \
-                "\t" + str(self.get_balance_craft1()).rjust(3, ' ') + " CM1" + \
-                "\t" + "Next Adv: " + self.seconds_to_hms(self.time_to_next_adventure()) + \
-                "\t" + "Next Cellar: " + self.seconds_to_hms(self.time_to_next_cellar()) + \
-                " (+" + str(self.expected_cellar_loot()) + " CM1)"
+        return  {
+            "SummonerId": self.token_id,
+            "Class": self.class_name,
+            "Level": "lvl " + str(self.level),
+            "XP": xp_str,
+            "Gold": round(self.gold),
+            "Craft Mat(I)": round(self.get_balance_craft1()),
+            "Next Adventure": self.seconds_to_hms(self.time_to_next_adventure()),
+            "Next Cellar": self.seconds_to_hms(self.time_to_next_cellar()),
+            "Cellar Loot": round(self.expected_cellar_loot())
+        }
                 
     @staticmethod
     def seconds_to_hms(secs):
         if (secs <= 0):
-            return "READY".ljust(9, ' ')
+            return "READY".rjust(9, ' ')
         h = secs // 3600
         secs = secs % 3600
         m = secs // 60
         s = secs % 60
         hms = str(h) + "h" + str(m) + "m" + str(s) + "s"
-        return hms.ljust(9, ' ')
+        return hms.rjust(9, ' ')
     
     def update_summoner_info(self):
         """Update class, level and xp"""

@@ -25,7 +25,7 @@ You need python and pip3 installed on your host.
 Before running the code you'll need to install a few dependencies with:
 
 ```powershell
-pip3 install --user web3 colorama argparse getpass
+pip3 install --user web3 colorama argparse getpass tabulate
 ```
 
 Next, clone the repository or simply download the files. Now you can run `rarity.py`!
