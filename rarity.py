@@ -43,7 +43,7 @@ def create_parser():
                         default = "legacy")
     
     # Command RUN takes argument --actions:
-    parser.add_argument('-a', '--actions', help='''All actions to take. Will do everything by default.
+    parser.add_argument('-a', '--actions', help='''Actions to take when command is "run". Will do everything by default.
                                                    Select one or more from 
                                                    "list" (list Summoners on address), 
                                                    "adventure", 
@@ -103,7 +103,6 @@ if (__name__ == "__main__"):
     if args.import_key:
         try:
             key.import_new_privatekey(DEFAULT_KEY_FILE)
-            print("Key imported successfully in " + DEFAULT_KEY_FILE  + " - run the program again to use it.")
         except key.InvalidInputError as e:
             print(e)
         exit()

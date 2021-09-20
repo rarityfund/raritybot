@@ -1,4 +1,5 @@
 from getpass import getpass
+import os
 from web3.eth import Account
 import json
 
@@ -10,8 +11,11 @@ def import_new_privatekey(to_filepath):
     '''Import a new private key and store it locally at filepath'''
     private_key = request_private_key()
     keystore_password = request_new_password()
-    store_private_key(private_key, keystore_password, filepath = to_filepath)
-    print("Your private key has been imported with success !\n")
+    try:
+        store_private_key(private_key, keystore_password, filepath = to_filepath)
+        print("Your private key has been imported with success !\n")
+    except FileExistsError:
+        print("File already exists: aborting...")
 
 def request_private_key(max_attempts = 3):
     print("Please paste your private key here :")
@@ -58,10 +62,14 @@ def is_valid_private_key(private_key):
 def store_private_key(private_key, password, filepath):
     '''Encrypt key with password and store it at filepath'''
     keystore_dict = Account.encrypt(private_key, password)
+    if os.path.exists(filepath):
+        print(str(filepath) + " already exists. Overwrite? [y/n]")
+        if (input("> ") != "y"):
+            raise FileExistsError(filepath)
     with open(filepath, mode="w") as f:
         json.dump(keystore_dict, f)
     return filepath
-
+  
 def load_private_key(filepath, password):
     '''Load encrypted private key from file. May raise InvalidInputError.'''
     try:

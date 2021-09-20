@@ -1,8 +1,8 @@
-# raritybot Devel version (WIP)
+# raritybot WIP (devel)
 
 - Now able to assign attributes to newly created summoners, via `--attributes` which takes a JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
 
-# raritybot v1.2.0
+# raritybot v1.2.0 (master)
 
 - Add "command" as positional argument. Run the traditional script with `python3 rarity.py run`.
   New commands include "run", "list", "check_gas", "summon" and will include "craft" at some point.
