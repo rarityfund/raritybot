@@ -1,7 +1,7 @@
 from colorama import Fore
 
 class Summoner:
-    '''Summoners are characters in rarity'''
+    '''Fetch summoner details and handle summoner actions'''
 
     classes =  ["No class",
                 "Barbarian",
@@ -28,7 +28,8 @@ class Summoner:
         return "A " + self.class_name + " (" + str(self.token_id) + ")"
 
     def get_details(self):
-        """Get a string full of details about the summoner"""
+        """Get a dict full of details about the summoner.
+           Print it with tabulate for best results."""
         xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
         return  {
             "SummonerId": self.token_id,
@@ -61,9 +62,6 @@ class Summoner:
         self.level =  summoner_info[3]
         self.xp = summoner_info[0] / 1e18
 
-    def update_gold_balance(self):
-        self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
-
     @classmethod
     def class_from_index(cls, index):
         '''Get class from index (local lookup)'''
@@ -73,10 +71,25 @@ class Summoner:
             print("Invalid class ID")
             return "N/A"
 
-    def class_from_index_remote(self, index):
-        '''Get class from index (remote lookup)'''
-        summoner_class = self.contracts["summoner"].functions.classes(index).call()
-        return summoner_class
+    ### GOLD -----------------------------
+
+    def update_gold_balance(self):
+        self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
+
+    def check_claim_gold(self):
+        claimable_gold = self.contracts["gold"].functions.claimable(self.token_id).call()
+        return claimable_gold > 0
+
+    def claim_gold(self):
+        if self.check_claim_gold():
+            print(Fore.WHITE + str(self) + " is claiming gold")
+            claim_gold_fun = self.contracts["gold"].functions.claim(self.token_id)
+            tx_status = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000)
+            if tx_status["status"] == "success":
+                print("The summoner claimed gold with success !")
+                self.update_gold_balance()
+
+    ### ADVENTURE ------------------------
 
     def time_to_next_adventure(self):
         """Get time to next adventure in seconds"""
@@ -96,6 +109,8 @@ class Summoner:
                 print("The summoner came back with success from his adventure!")
                 self.update_summoner_info()
 
+
+    ### LEVEL UP ----------------------------
 
     def xp_required(self):
         return self.level * (self.level + 1) / 2 * 1000
@@ -118,18 +133,8 @@ class Summoner:
             else: 
                 print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")
 
-    def check_claim_gold(self):
-        claimable_gold = self.contracts["gold"].functions.claimable(self.token_id).call()
-        return claimable_gold > 0
 
-    def claim_gold(self):
-        if self.check_claim_gold():
-            print(Fore.WHITE + str(self) + " is claiming gold")
-            claim_gold_fun = self.contracts["gold"].functions.claim(self.token_id)
-            tx_status = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000)
-            if tx_status["status"] == "success":
-                print("The summoner claimed gold with success !")
-                self.update_gold_balance()
+    ### CELLAR (CRAFT1) -------------------------------------------
 
     def time_to_next_cellar(self):
         next_time_available = self.contracts["cellar"].functions.adventurers_log(self.token_id).call()
