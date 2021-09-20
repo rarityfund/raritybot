@@ -72,9 +72,9 @@ Examples:
 python3 rarity.py list
 python3 rarity.py check_gas
 
-# Run full daiy routine
+# Run full daily routine
 python3 rarity.py run
-# Run full daiy routine in batch mode (faster)
+# Run full daily routine in batch mode (faster)
 python3 rarity.py run --txmode batch
 # Run only adventure and cellar
 python3 rarity.py run --actions adventure cellar

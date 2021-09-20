@@ -1,6 +1,6 @@
 # raritybot Devel version (WIP)
 
-- Now able to assign attributes to newly created summoners, via `--attributes` which takes JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
+- Now able to assign attributes to newly created summoners, via `--attributes` which takes a JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
 
 # raritybot v1.2.0
 
@@ -8,10 +8,10 @@
   New commands include "run", "list", "check_gas", "summon" and will include "craft" at some point.
 - Only asking for pwd when private key is needed (for example, not for "list" or "check_gas")
 - Can now summon summoners with `python3 rarity.py summon --class Bard -n 3`. 
-  Class is needed but count is optional (will summon 1 bydefault). Compatible with `--txmode batch` for the industrial farmers.
+  Class is needed but count is optional (will summon 1 by default). Compatible with `--txmode batch` for the industrial farmers.
 - Misc UI improvement:
     * Gas check now includes gas price and cost of summoning
-    * Time to next adventure and next cellar (+ cellar loot) now shown in summoer printing
+    * Time to next adventure and next cellar (+ cellar loot) now shown in summoner listing
 
 # raritybot v1.1
 
