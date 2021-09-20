@@ -1,5 +1,9 @@
 from colorama import Fore
 
+class InvalidAmountError(Exception):
+    """Used to indicate invalid amounts during transfers"""
+    pass
+
 class Summoner:
     '''Fetch summoner details and handle summoner actions'''
 
@@ -73,8 +77,11 @@ class Summoner:
 
     ### GOLD -----------------------------
 
+    def get_balance_gold(self):
+        return self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
+    
     def update_gold_balance(self):
-        self.gold = self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
+        self.gold = self.get_balance_gold()
 
     def check_claim_gold(self):
         claimable_gold = self.contracts["gold"].functions.claimable(self.token_id).call()
@@ -88,6 +95,18 @@ class Summoner:
             if tx_status["status"] == "success":
                 print("The summoner claimed gold with success !")
                 self.update_gold_balance()
+
+    def transfer_all_gold(self, to_id):
+        self.update_gold_balance()
+        return self.transfer_gold(to_id, amount = self.gold)
+
+    def transfer_gold(self, to_id, amount):
+        if amount > self.gold:
+            raise InvalidAmountError("Summoner doesn't have enough gold")
+        if amount <= 0:
+            raise InvalidAmountError("Nothing to send")
+        transfer_fun = self.contracts["gold"].functions.transfer(self.token_id, to_id, amount)
+        return self.transacter.sign_and_execute(transfer_fun, gas = 70000)
 
     ### ADVENTURE ------------------------
 
@@ -157,3 +176,14 @@ class Summoner:
 
     def get_balance_craft1(self):
         return self.transacter.contracts["craft1"].functions.balanceOf(self.token_id).call()
+
+    def transfer_all_craft1(self, to_id):
+        return self.transfer_craft1(to_id, amount = self.get_balance_craft1())
+
+    def transfer_craft1(self, to_id, amount):
+        if amount > self.get_balance_craft1():
+            raise InvalidAmountError("Summoner doesn't enough crafting material")
+        if amount <= 0:
+            raise InvalidAmountError("Nothing to send")
+        transfer_fun = self.transacter.contracts["craft1"].functions.transfer(self.token_id, to_id, amount)
+        return self.transacter.sign_and_execute(transfer_fun, gas = 70000)
