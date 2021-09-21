@@ -16,56 +16,97 @@ def print_intro():
 
 def create_parser():
     parser = argparse.ArgumentParser(description='Manage your rarity summoners')
-    # Main command to direct what we do for that session
-    parser.add_argument("command", default = "run", choices = ["run", "list", "summon", "check_gas"],
-                        help='''Main command:
-                        "run" to run the bot (configure with --actions),
-                        "list" to simply list summoners,
-                        "summon" to create new summoners (configure with -n and --class)
-                        "check_gas" to show price in FTM of common actions,
-                        ''',
-                        ) 
 
     # Authentication-related arguments: keyfile, password, import-key
-    parser.add_argument('-k', '--keyfile', help='Path to encrypted keyfile', 
+    auth_group = parser.add_argument_group('authentication')
+    auth_group.add_argument('-k', '--keyfile', help='Path to encrypted keyfile', 
                         default = DEFAULT_KEY_FILE)
-    parser.add_argument('-p', '--password', help='''Password to decrypt the keyfile. 
+    auth_group.add_argument('-p', '--password', help='''Password to decrypt the keyfile. 
                         Be aware it will be available in plaintext in the shell history. 
                         Use of interactive login is preferable if possible.''', default = '')
-    parser.add_argument('--import-key', help='''Import a private key which will be stored 
+    auth_group.add_argument('--import-key', help='''Import a private key which will be stored 
                         encrypted in `privatekeyencrypted.json`''', 
                         action = 'store_true')
 
     # General config arguments: txmode
-    parser.add_argument('--txmode', help='''How transactions are processed. 
-                                            "legacy" to send them one by one and wait for the receipt each time.
-                                            "batch" to send tx in batches and wait less often''',
-                        default = "legacy")
+    config_group = parser.add_argument_group('configuration')
+    config_group.add_argument('--txmode', help='''How transactions are processed. 
+                        "single" to send them one by one and wait for the receipt each time.
+                        "batch" to send tx in batches and wait less often''',
+                        default = "single", choices = ["single", "batch"])
     
+    # Subparsers: one for each command!
+    subparsers = parser.add_subparsers(title = "Commands", dest = "command")
+    
+     # Command LIST takes argument 'what':
+    parser_list = subparsers.add_parser("show", aliases = ["list"], 
+                        help = "Show/list a variety of things, like gas price or summoners.")
+    parser_list.add_argument("what", help = "What to show. By default, list summoners.", nargs = '?',
+                        choices = ["summoners", "gas"], default = "summoners")
+
     # Command RUN takes argument --actions:
-    parser.add_argument('-a', '--actions', help='''Actions to take when command is "run". Will do everything by default.
-                                                   Select one or more from 
-                                                   "list" (list Summoners on address), 
-                                                   "adventure", 
-                                                   "level_up", 
-                                                   "claim_gold", 
-                                                   "cellar" (send to cellar dungeon)''',
+    parser_run = subparsers.add_parser("run", help = "Run the bot to take automatic configurable actions.")
+    parser_run.add_argument('actions', help='''Actions to take. Will do everything by default.
+                        Select one or more from 
+                        "list" (list Summoners on address), 
+                        "adventure", 
+                        "level_up", 
+                        "claim_gold", 
+                        "cellar" (send to cellar dungeon)''',
                         nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
 
     # Command SUMMON takes argument --class and optionally -n
-    parser.add_argument('--class', dest = "summoner_class", # cannot use 'class' as var name in python
-                        help='''Class used for summoning. Required if command is "summon".
-                                Can be class ID (1 to 11) or class name (e.g. "Bard").''',
-                        default = "")
-    parser.add_argument('--attributes', dest = "attributes",
-                        help='''Json-formatted attributes to assign after summoning. Only used when command is "summon".
+    parser_summon = subparsers.add_parser("summon", help = "Summon new summoners of a given class and optionally set attributes.")
+    parser_summon.add_argument('summoner_class', # cannot use 'class' as var name in python
+                        help='''Class used for summoning. Required.''',
+                        choices=Summoner.classes[1:12], default = "")
+    parser_summon.add_argument('--attributes', dest = "attributes",
+                        help='''Json-formatted attributes to assign after summoning.
                         If not provided, attributes won't be assigned. Should look like: 
                         '{"str":8, "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. 
                         The assignment must cost 32 AP to buy to be valid (you will be warned if it's not the case).
                         ''',
                         default = "")
-    parser.add_argument('-n', '--count', help='Number of summoners to create if command is "summon". Default is 1',
+    parser_summon.add_argument('-n', '--count', help='Number of summoners to create. Default is 1',
                         default = 1, type = int)
+
+    # Command TRANSFER --from, --to and --amount
+    parser_transfer = subparsers.add_parser("transfer", help = "Transfer ERC20 assets between summoners.")
+    parser_transfer.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',
+                        choices = ["gold", "craft1"])
+    parser_transfer.add_argument('--from', dest = "from_id", # cannot use 'from' as var name in python
+                        help='''ID of sending summoner or "all" in which case 
+                        ALL summoners at that address will perform the transfer. Required.''',
+                        default = "")
+    parser_transfer.add_argument('--to', dest = "to_id",
+                        help='''ID of receiving summoner. Required. 
+                        If the summoner does not belong to the current address, the transfer will abort for safety.
+                        Use `--force` to send funds to summoners on another address.''',
+                        default = "")
+    parser_transfer.add_argument('-n', '--amount', help='Amount to transfer (int).',
+                        default = 0, type = int)
+    parser_transfer.add_argument('--force',  help='''Force transfer to proceed. 
+                        Needed to transfer assets to a summoner not owned by this address.''',
+                        action = "store_true")
+
+    # Command TRANSFER_ALL --from, --to and --amount
+    parser_transfer_all = subparsers.add_parser("transfer_all", 
+                        help = "Transfer all of an ERC20 asset to a particular summoner.")
+    parser_transfer_all.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',
+                        choices = ["gold", "craft1"])
+    parser_transfer_all.add_argument('--from', dest = "from_id", # cannot use 'from' as var name in python
+                        help='''Optional ID of sending summoner. 
+                        Typically omitted, in which case ALL summoners at that address will perform the transfer!''', 
+                        default = "all")
+    parser_transfer_all.add_argument('--to', dest = "to_id",
+                        help='''ID of receiving summoner. Required. 
+                        If the summoner does not belong to the current address, the transfer will abort for safety.
+                        Use `--force` to send funds to summoners on another address.''',
+                        default = "")
+    parser_transfer_all.add_argument('--force',  help='''Force transfer to proceed. 
+                        Needed to transfer assets to a summoner not owned by this address.''',
+                        action = "store_true")
+                        
     return parser
 
 def get_address_from_args(args):
@@ -118,7 +159,7 @@ if (__name__ == "__main__"):
     # Create transacter from address and private_key (the latter only if we need to sign tx)
     # The transacter will handle the signing and executing of transactions
     owner_address = get_address_from_args(args)
-    if args.command in ["check_gas", "list"]:
+    if args.command in ["show", "list"]:
         # Don't need the private key for that
         transacter = Transacter(owner_address, private_key = None, txmode = args.txmode)
     else:
@@ -128,15 +169,14 @@ if (__name__ == "__main__"):
 
     # Running the main command
 
-    ### CHECK GAS ---------------
-    if args.command == "check_gas":
-        # Just printing gas price and action costs and exiting
-        transacter.print_gas_price()
-
-    ### LIST SUMMONERS -----------
-    elif args.command == "list":
-        # Just listing summoner and exiting
-        list_summoners(owner_address, transacter, verbose = True)
+    ### LIST THINGS -----------
+    if args.command in ["show", "list"]:
+        if args.what == "summoners":
+            # Listing summoners
+            list_summoners(owner_address, transacter, verbose = True)
+        elif args.what == "gas": 
+            # Printing gas price and action costs
+            transacter.print_gas_price()
 
     ### SUMMON NEW SUMMONERS -----
     elif args.command == "summon":
@@ -230,6 +270,12 @@ if (__name__ == "__main__"):
             for summoner in summoners:
                 summoner.go_cellar()
             transacter.wait_for_pending_transations()
+    elif args.command == "transfer":
+        # TODO
+        pass
+    elif args.command == "transfer_all":
+        # TODO
+        pass
     else:
         print(Fore.RED + "Unrecognised command")    
         

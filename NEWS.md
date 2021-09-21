@@ -1,10 +1,34 @@
 # raritybot WIP (devel)
 
-- Now able to assign attributes to newly created summoners, via `--attributes` which takes a JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
+- Revamped CLI by using argument groups and subparsers to handle subcommands. 
+  Now each command (like `run`, `list`, `summon`, etc) will have its own argument namespace which will make life much easier!
+  Each command will also have a dedicated help page! See `python3 rarity.py --help` for the top-level help and
+  for example `python3 rarity.py run --help` and ``python3 rarity.py summon --help``.
+  
+  *IMPORTANT: top-level arguments like `--keyfile`, `--password` and `--txmode` must be given BEFORE the command!*
 
-- Printing balance of crafting material (I) in summoner info
+  This allows each command to take independant positional arguments, which just wasn't possible before.
+  This greatly simplifies the interface: 
+      * `run` actions can be given directly with `python3 rarity.py --keyfile key.json run adventure cellar`
+        The basic `python3 rarity.py run` will still work as intended.
+      * `list` (and its new alias `show`) can show summoners, gas and maybe crafting codex soon: 
+        See `python3 rarity.py list summoners` or `python3 rarity.py show gas`
+        The basic `python3 rarity.py list` will still work as intended.
+      * `check_gas` is retired in favor of `list gas` or `show gas`.
+      * `summon` summons the class directly: `python3 rarity.py summon Barbarian -n 2`
+      * `transfer` and `transfer_all` can handle various assets (gold and craft1 for now):
+        `python3 rarity.py transfer gold --from FROM --to TO -n 1000`
+        `python3 rarity.py transfer_all craft1 --to TO`
+  
+  Now that commands are actually independent from each other, the CLI should be more stable even as more commands are added.
+
+  
 
 - Improved listing of summoner info. Requires NEW DEPENDENCY `tabulate` to install with `pip3 install --user tabulate`. 
+
+- Printing balance of `craft1` (i.e. `crafting material (I)`) in summoner info
+
+- Now able to assign attributes to newly created summoners, via `--attributes` which takes a JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
 
 # raritybot v1.2.0 (master)
 
