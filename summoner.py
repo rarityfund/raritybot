@@ -1,5 +1,9 @@
 from colorama import Fore
 
+class InvalidSummonerError(Exception):
+    """Used to indicate an invalid summoner is handled"""
+    pass
+
 class InvalidAmountError(Exception):
     """Used to indicate invalid amounts during transfers"""
     pass
@@ -77,9 +81,6 @@ class Summoner:
 
     ### GOLD -----------------------------
 
-    def get_balance_gold(self):
-        return self.contracts["gold"].functions.balanceOf(self.token_id).call() / 1e18
-    
     def update_gold_balance(self):
         self.gold = self.get_balance_gold()
 
@@ -96,17 +97,13 @@ class Summoner:
                 print("The summoner claimed gold with success !")
                 self.update_gold_balance()
 
-    def transfer_all_gold(self, to_id):
-        self.update_gold_balance()
-        return self.transfer_gold(to_id, amount = self.gold)
+    def get_balance_gold(self):
+        return self.get_balance_erc20(self.transacter.contracts["gold"], scaling_factor = 1e18)
 
     def transfer_gold(self, to_id, amount):
-        if amount > self.gold:
-            raise InvalidAmountError("Summoner doesn't have enough gold")
-        if amount <= 0:
-            raise InvalidAmountError("Nothing to send")
-        transfer_fun = self.contracts["gold"].functions.transfer(self.token_id, to_id, amount)
-        return self.transacter.sign_and_execute(transfer_fun, gas = 70000)
+        print(Fore.WHITE + "Sending " + str(amount) + " gold from " + str(self.token_id) + " to " + str(to_id))
+        return self.transfer_erc20(to_id, amount, contract = self.contracts["gold"], scaling_factor = 1e18)
+
 
     ### ADVENTURE ------------------------
 
@@ -175,15 +172,38 @@ class Summoner:
                 print("The summoner came back from The Cellar with success !")
 
     def get_balance_craft1(self):
-        return self.transacter.contracts["craft1"].functions.balanceOf(self.token_id).call()
-
-    def transfer_all_craft1(self, to_id):
-        return self.transfer_craft1(to_id, amount = self.get_balance_craft1())
+        return self.get_balance_erc20(self.transacter.contracts["craft1"], scaling_factor = 1)
 
     def transfer_craft1(self, to_id, amount):
-        if amount > self.get_balance_craft1():
-            raise InvalidAmountError("Summoner doesn't enough crafting material")
-        if amount <= 0:
-            raise InvalidAmountError("Nothing to send")
-        transfer_fun = self.transacter.contracts["craft1"].functions.transfer(self.token_id, to_id, amount)
+        print(Fore.WHITE + "Sending " + str(amount) + " crafting material (I) from " + str(self.token_id) + " to " + str(to_id))
+        return self.transfer_erc20(to_id, amount, contract = self.contracts["craft1"], scaling_factor = 1)
+
+    # Generic balance and transfer
+
+    def get_balance_erc20(self, contract, scaling_factor):
+        return contract.functions.balanceOf(self.token_id).call() / scaling_factor
+
+    def transfer_erc20(self, to_id, amount, contract, scaling_factor):
+        """Transfer tokens:
+        to_id: summoner_id of the recipient
+        amount: amount to send or "max" to send full balance
+        contract: contract (with abi loaded) implementing balanceOf and transfer
+        scaling_factor: Factor between UI units and contract units. 1 for craft1, 1e18 for gold."""
+        balance = contract.functions.balanceOf(self.token_id).call()
+        # Set amount
+        if amount == "max":
+            amount = int(balance)
+        else:
+            try:
+                amount = int(int(amount) * scaling_factor)
+            except ValueError:
+                raise InvalidAmountError("Invalid amount: Must be integer or 'all'.")
+        # Check amount
+        if amount > balance:
+            raise InvalidAmountError("Invalid amount: Sender doesn't have that much.")
+        elif amount <= 0:
+            print(Fore.RED + "Empty balance: skipping")
+            return None 
+        # Do the transfer
+        transfer_fun = contract.functions.transfer(self.token_id, to_id, amount)
         return self.transacter.sign_and_execute(transfer_fun, gas = 70000)

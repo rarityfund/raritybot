@@ -81,13 +81,13 @@ def create_parser():
                         If the summoner does not belong to the current address, the transfer will abort for safety.
                         Use `--force` to send funds to summoners on another address.''',
                         default = "")
-    parser_transfer.add_argument('-n', '--amount', help='Amount to transfer (int).',
-                        default = 0, type = int)
+    parser_transfer.add_argument('-n', '--amount', help='Required. Amount to transfer (integer).',
+                        default = 0, type = int, required = True)
     parser_transfer.add_argument('--force',  help='''Force transfer to proceed. 
                         Needed to transfer assets to a summoner not owned by this address.''',
                         action = "store_true")
 
-    # Command TRANSFER_ALL --from, --to and --amount
+    # Command TRANSFER_ALL: almost the same as TRANSFER but different defaults and no amount
     parser_transfer_all = subparsers.add_parser("transfer-all", parents=[shared_parser],
                         help = "Transfer all of an ERC20 asset to a particular summoner.")
     parser_transfer_all.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',

@@ -7,6 +7,7 @@ import key
 import commands
 import cliparser
 from transacter import Transacter
+from summoner import InvalidAmountError, InvalidSummonerError
 
 def print_intro():
     print(Fore.RED + 'Welcome to Rarity bot v1.2.0.9000 (devel version)')
@@ -80,16 +81,16 @@ if (__name__ == "__main__"):
     elif args.command == "summon":
         commands.command_summon(args, transacter)
 
-    # RUN ACTIONS --------------
+    # RUN ACTIONS ---------------
     elif args.command == "run":
         commands.command_run(args, transacter)
-        
-    elif args.command == "transfer":
-        # TODO
-        pass
-    elif args.command == "transfer_all":
-        # TODO
-        pass
+
+    # TRANSFER ------------------
+    elif args.command in ["transfer", "transfer-all"]:
+        try:
+            commands.command_transfer(args, transacter, transfer_all = args.command == "transfer-all")
+        except (InvalidAmountError, InvalidSummonerError) as e:
+            print(Fore.RED + str(e))
     else:
         print(Fore.RED + "Unrecognised command")    
         

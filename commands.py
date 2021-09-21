@@ -1,4 +1,4 @@
-from summoner import Summoner
+from summoner import InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_summoners
 from summoning import SummoningEngine
 from colorama import Fore
@@ -102,3 +102,47 @@ def command_run(args, transacter):
         for summoner in summoners:
             summoner.go_cellar()
         transacter.wait_for_pending_transations()
+
+def command_transfer(args, transacter, transfer_all = False):
+    if not args.from_id:
+        raise InvalidSummonerError("Must specify a sender with `--from`")
+    
+    summoners = list_summoners(transacter.address, transacter, verbose = False)
+    summoner_ids = [str(round(s.token_id)) for s in summoners]
+    
+    # Set sender(s)
+    if args.from_id == "all":
+        senders = summoners
+    elif args.from_id not in summoner_ids:
+        print(summoner_ids)
+        raise InvalidSummonerError("Sender (" + args.from_id + ") is not owned by this address.")
+    else:
+        try:
+            sender_id = int(args.from_id)
+        except ValueError:
+            raise InvalidSummonerError("Invalid sender ID")
+        senders = [Summoner(sender_id, transacter)]
+
+    # Check recipient
+    if args.to_id not in summoner_ids and not args.force:
+        raise InvalidSummonerError("Recipient (" + args.to_id + ") is not owned by this address. " + \
+                                   "Use `--force` to authorise this transfer.")
+    try:
+        recipient_id = int(args.to_id)
+    except ValueError:
+        raise InvalidSummonerError("Invalid recipient ID")
+    
+    # Set amount
+    amount = "max" if transfer_all else args.amount
+    
+    # Do the transfer(s)
+    for sender in senders:
+        if args.what == "gold":
+            sender.transfer_gold(recipient_id, amount = amount)
+        elif args.what == "craft1":
+            sender.transfer_craft1(recipient_id, amount = amount)
+        else:
+            raise InvalidAmountError("Invalid token: cannot transfer")
+
+    transacter.wait_for_pending_transations()
+
