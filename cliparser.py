@@ -28,7 +28,7 @@ def create_parser():
     subparsers = parser.add_subparsers(title = "Commands", dest = "command")
  
     # Command IMPORT_KEY:
-    parser_import_key = subparsers.add_parser("import_key", help = "Import a new private key.")
+    parser_import_key = subparsers.add_parser("import-key", help = "Import a new private key.")
     parser_import_key.add_argument("--keyfile", help = "File path where key will be stored encrypted. " + \
                             "Default location: " + DEFAULT_KEY_FILE,
                             default = DEFAULT_KEY_FILE)
@@ -88,7 +88,7 @@ def create_parser():
                         action = "store_true")
 
     # Command TRANSFER_ALL --from, --to and --amount
-    parser_transfer_all = subparsers.add_parser("transfer_all", parents=[shared_parser],
+    parser_transfer_all = subparsers.add_parser("transfer-all", parents=[shared_parser],
                         help = "Transfer all of an ERC20 asset to a particular summoner.")
     parser_transfer_all.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',
                         choices = ["gold", "craft1"])

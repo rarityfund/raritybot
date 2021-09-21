@@ -5,23 +5,25 @@
   Each command will also have a dedicated help page! See `python3 rarity.py --help` for the top-level help and
   for example `python3 rarity.py run --help` and ``python3 rarity.py summon --help``.
   
+  *IMPORTANT: the command MUST be the first argument. This does NOT work: `python3 rarity.py --keyfile key.json run`*
+
   This allows each command to take independant positional arguments, which just wasn't possible before.
   This greatly simplifies the interface: 
-      * `run` actions can be given directly with `python3 rarity.py --keyfile key.json run adventure cellar`
+      * `run` actions can be given directly with `python3 rarity.py run adventure cellar --keyfile key.json`
         The basic `python3 rarity.py run` will still work as intended.
       * `list` (and its new alias `show`) can show summoners, gas and maybe crafting codex soon: 
         See `python3 rarity.py list summoners` or `python3 rarity.py show gas`
         The basic `python3 rarity.py list` will still work as intended.
       * `check_gas` is retired in favor of `list gas` or `show gas`.
       * `summon` summons the class directly: `python3 rarity.py summon Barbarian -n 2`
-      * `transfer` and `transfer_all` can handle various assets (gold and craft1 for now):
+      * `transfer` and `transfer-all` can handle various assets (gold and craft1 for now):
         `python3 rarity.py transfer gold --from FROM --to TO -n 1000`
         `python3 rarity.py transfer_all craft1 --to TO`
   
   Now that commands are actually independent from each other, the CLI should be more stable even as more commands are added.
 
-- New command `import_key` to replace `--import_key`, which takes an option `--keyfile` argument to specify where to save the file.
-  Simply do: `python3 rarity.py import_key --keyfile new_key.json`
+- New command `import-key` to replace `--import_key`, which takes an option `--keyfile` argument to specify where to save the file.
+  Simply do: `python3 rarity.py import-key --keyfile new_key.json`
 
 - Internal refactoring to make `rarity.py` smaller. Parser definition went to `cliparser.py` and command definitions went to `commands.py`
 
