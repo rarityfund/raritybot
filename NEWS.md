@@ -23,6 +23,8 @@
 - New command `import_key` to replace `--import_key`, which takes an option `--keyfile` argument to specify where to save the file.
   Simply do: `python3 rarity.py import_key --keyfile new_key.json`
 
+- Internal refactoring to make `rarity.py` smaller. Parser definition went to `cliparser.py` and command definitions went to `commands.py`
+
 - Improved listing of summoner info. Requires NEW DEPENDENCY `tabulate` to install with `pip3 install --user tabulate`. 
 
 - Printing balance of `craft1` (i.e. `crafting material (I)`) in summoner info
