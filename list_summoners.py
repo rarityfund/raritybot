@@ -1,4 +1,5 @@
 from colorama import Fore
+from tabulate import tabulate
 import requests
 
 # Class Summoner is defined in summoner.py
@@ -6,6 +7,8 @@ from summoner import Summoner
 
 def list_summoners(address, transacter, verbose = True):
     '''List summoners by checking incoming and outgoing ERC721 tx on FTscan'''
+    
+    print("Scanning for summoners, this may take a while...")
 
     # Check all ERC721 transactions from account using FTScan API
     erc721transfers_url = "https://api.ftmscan.com/api?module=account&action=tokennfttx&address=" + \
@@ -31,12 +34,20 @@ def list_summoners(address, transacter, verbose = True):
         if transaction["from"] == address:
             rarities_tokenid_list.remove(int(transaction["tokenID"]))
 
+
     # Finally, we instantiate a Summoner for each ID
     summoners = []
     for id in rarities_tokenid_list:
         summoner = Summoner(id, transacter)
         summoners.append(summoner)
-        if verbose:
-            print(Fore.LIGHTGREEN_EX + summoner.get_details())
+
+    print(Fore.GREEN + "Found " + str(len(summoners)) + " summoners!\n")
+    
+    # Print data if verbose
+    if verbose:
+        summoner_data = [summoner.get_details() for summoner in summoners]
+        tbl = tabulate(summoner_data, headers = "keys", tablefmt = "fancy")
+        print(Fore.WHITE + tbl)
+
     return summoners
 
