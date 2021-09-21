@@ -15,37 +15,43 @@ def print_intro():
     print(Fore.RED + 'Welcome to Rarity bot v1.2.0.9000 (devel version)')
 
 def create_parser():
-    parser = argparse.ArgumentParser(description='Manage your rarity summoners')
 
-    # Authentication-related arguments: keyfile, password, import-key
-    auth_group = parser.add_argument_group('authentication')
-    auth_group.add_argument('-k', '--keyfile', help='Path to encrypted keyfile', 
+    # Putting shared arguments in a shared parser used as parent
+    shared_parser = argparse.ArgumentParser(add_help=False)
+    # General config/auth arguments: keyfile, password, txmode
+    config_group = shared_parser.add_argument_group('configuration')
+    config_group.add_argument('-k', '--keyfile', help='Path to encrypted keyfile', 
                         default = DEFAULT_KEY_FILE)
-    auth_group.add_argument('-p', '--password', help='''Password to decrypt the keyfile. 
+    config_group.add_argument('-p', '--password', help='''Password to decrypt the keyfile. 
                         Be aware it will be available in plaintext in the shell history. 
                         Use of interactive login is preferable if possible.''', default = '')
-    auth_group.add_argument('--import-key', help='''Import a private key which will be stored 
-                        encrypted in `privatekeyencrypted.json`''', 
-                        action = 'store_true')
-
-    # General config arguments: txmode
-    config_group = parser.add_argument_group('configuration')
     config_group.add_argument('--txmode', help='''How transactions are processed. 
                         "single" to send them one by one and wait for the receipt each time.
-                        "batch" to send tx in batches and wait less often''',
+                        "batch" to send tx in batches and wait less often.''',
                         default = "single", choices = ["single", "batch"])
-    
+
+
+    # This is the top level parser to which we'll add subparsers
+    parser = argparse.ArgumentParser(description='Manage your rarity summoners', parents=[shared_parser])
+
     # Subparsers: one for each command!
     subparsers = parser.add_subparsers(title = "Commands", dest = "command")
+ 
+    # Command IMPORT_KEY:
+    parser_import_key = subparsers.add_parser("import_key", help = "Import a new private key.")
+    parser_import_key.add_argument("--keyfile", help = "File path where key will be stored encrypted. " + \
+                            "Default location: " + DEFAULT_KEY_FILE,
+                            default = DEFAULT_KEY_FILE)
     
      # Command LIST takes argument 'what':
-    parser_list = subparsers.add_parser("show", aliases = ["list"], 
+    parser_list = subparsers.add_parser("show", aliases = ["list"], parents = [shared_parser],
                         help = "Show/list a variety of things, like gas price or summoners.")
     parser_list.add_argument("what", help = "What to show. By default, list summoners.", nargs = '?',
                         choices = ["summoners", "gas"], default = "summoners")
 
     # Command RUN takes argument --actions:
-    parser_run = subparsers.add_parser("run", help = "Run the bot to take automatic configurable actions.")
+    parser_run = subparsers.add_parser("run", parents=[shared_parser],
+                        help = "Run the bot to take automatic configurable actions.")
     parser_run.add_argument('actions', help='''Actions to take. Will do everything by default.
                         Select one or more from 
                         "list" (list Summoners on address), 
@@ -56,7 +62,8 @@ def create_parser():
                         nargs='*', default = ["list", "adventure", "level_up", "claim_gold", "cellar"])
 
     # Command SUMMON takes argument --class and optionally -n
-    parser_summon = subparsers.add_parser("summon", help = "Summon new summoners of a given class and optionally set attributes.")
+    parser_summon = subparsers.add_parser("summon", parents=[shared_parser],
+                        help = "Summon new summoners of a given class and optionally set attributes.")
     parser_summon.add_argument('summoner_class', # cannot use 'class' as var name in python
                         help='''Class used for summoning. Required.''',
                         choices=Summoner.classes[1:12], default = "")
@@ -71,7 +78,8 @@ def create_parser():
                         default = 1, type = int)
 
     # Command TRANSFER --from, --to and --amount
-    parser_transfer = subparsers.add_parser("transfer", help = "Transfer ERC20 assets between summoners.")
+    parser_transfer = subparsers.add_parser("transfer", parents=[shared_parser],
+                        help = "Transfer ERC20 assets between summoners.")
     parser_transfer.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',
                         choices = ["gold", "craft1"])
     parser_transfer.add_argument('--from', dest = "from_id", # cannot use 'from' as var name in python
@@ -90,7 +98,7 @@ def create_parser():
                         action = "store_true")
 
     # Command TRANSFER_ALL --from, --to and --amount
-    parser_transfer_all = subparsers.add_parser("transfer_all", 
+    parser_transfer_all = subparsers.add_parser("transfer_all", parents=[shared_parser],
                         help = "Transfer all of an ERC20 asset to a particular summoner.")
     parser_transfer_all.add_argument('what', help='''What to transfer. One of "gold" or "craft1" for Crating Material (I).''',
                         choices = ["gold", "craft1"])
@@ -106,7 +114,7 @@ def create_parser():
     parser_transfer_all.add_argument('--force',  help='''Force transfer to proceed. 
                         Needed to transfer assets to a summoner not owned by this address.''',
                         action = "store_true")
-                        
+
     return parser
 
 def get_address_from_args(args):
@@ -141,9 +149,9 @@ if (__name__ == "__main__"):
     print_intro()
 
     # If the user wants to import a new key, we import and exit
-    if args.import_key:
+    if args.command == "import_key":
         try:
-            key.import_new_privatekey(DEFAULT_KEY_FILE)
+            key.import_new_privatekey(args.keyfile)
         except key.InvalidInputError as e:
             print(e)
         exit()
