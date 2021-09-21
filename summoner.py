@@ -189,6 +189,15 @@ class Summoner:
         amount: amount to send or "max" to send full balance
         contract: contract (with abi loaded) implementing balanceOf and transfer
         scaling_factor: Factor between UI units and contract units. 1 for craft1, 1e18 for gold."""
+        try:
+            to_id = int(to_id)
+        except ValueError:
+            raise InvalidSummonerError("Invalid summoner ID")
+
+        if self.token_id == to_id:
+            print(Fore.RED + "Sender is same as recipient: skipping")
+            return None
+
         balance = contract.functions.balanceOf(self.token_id).call()
         # Set amount
         if amount == "max":

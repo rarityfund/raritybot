@@ -24,7 +24,7 @@ You need python and pip3 installed on your host.
 
 Before running the code you'll need to install a few dependencies with:
 
-```powershell
+```sh
 pip3 install --user web3 colorama argparse getpass tabulate
 ```
 
@@ -40,8 +40,12 @@ On Metamask you can access your private key from the "Account details" panel.
 
 Open a shell in the directory of `rarity.py` and run:
 
-```
-python3 rarity.py run --import-key
+```sh
+# Import a key (to default location privatekeyencrypted.json)
+python3 rarity.py import-key
+
+# Or, if you want to specify where to save the key:
+python3 rarity.py import-key --keyfile path/to/keyfile.json
 ```
 
 This will store the private key you paste in an encrypted file `privatekeyencrypted.json` located in the active directory. You'll have to choose a password for that and use this password again every time you run the script.
@@ -50,7 +54,7 @@ This will store the private key you paste in an encrypted file `privatekeyencryp
 
 To run the program, simply open a shell at the location of `rarity.py` and run:
 
-```
+```sh
 python3 rarity.py run
 ```
 
@@ -61,80 +65,107 @@ You're supposed to run this script once a day but the script won't take any acti
 Beyond "run", the bot can also perform other commands:
 
 - "run" to run actions (by default, adenture, level up, etc). The actions are configurable with `--actions`
-- "list" to simply list the summoners
-- "check_gas" to print the price in FTM of common actions
-- "summon" to create new summoners. Requires the additional argument `--class` and takes optional arguments `-n` (to create more than one) and `--attributes` to set their attributes.
+- "show" to list the summoners (with `show summoners`), show gas price (with `show gas`), etc
+- "summon" to create new summoners of a given class takes optional arguments `-n` (to create more than one) and `--attributes` to set their attributes.
+- "transfer" or "transfer-all" to transfer gold or crafting material across summoners.
 
-Examples:
+For more details about those commands, please refer to the manual which you can get with `python3 rarity.py [command] --help`:
 
+```sh
+# General help
+python3 rarity.py --help
+
+# Help for "run"
+python3 rarity.py run --help
+
+# Help for "summon"
+python3 rarity.py summon --help
+
+# etc
 ```
-# Free and doesn't require password
-python3 rarity.py list
-python3 rarity.py check_gas
+
+## Examples
+
+Here are a few examples:
+
+```shell
+# List summoners (free, no need for pwd)
+python3 rarity.py show summoners
+
+# Show gas price and action costs (free, no need for pwd)
+python3 rarity.py show gas
 
 # Run full daily routine
 python3 rarity.py run
-# Run full daily routine in batch mode (faster)
-python3 rarity.py run --txmode batch
 # Run only adventure and cellar
-python3 rarity.py run --actions adventure cellar
+python3 rarity.py run adventure cellar
+# Run adventure and cellar in batch mode (faster)
+python3 rarity.py run adventure cellar --txmode batch
 
-# Create 1 Bard
-python3 rarity.py summon --class Bard
-# Create 2 Fighters
-python3 rarity.py summon --class Fighter -n 2
-# Create 3 Barbarians (class ID 1) in batched tx (faster) and set their attributes 
-python3 rarity.py summon --class 1 -n 3 --txmode batch --attributes '{"str":16,"dex":12,"const":16,"int":8,"wis":10,"cha":14}'
+# Summon a Bard
+python3 rarity.py summon Bard
+# Summon 2 Fighters
+python3 rarity.py summon Fighter -n 2
+# Summon 3 Barbarians in batched tx (faster) and set their attributes 
+python3 rarity.py summon Barbarian -n 3 --txmode batch --attributes '{"str":16,"dex":12,"const":16,"int":8,"wis":10,"cha":14}'
+
+# Send 200 gold from summoner 123 to summoner 456
+python3 rarity.py transfer gold --from 123 --to 456 --amount 200
+# Send all the gold from summoner 123 to summoner 456
+python3 rarity.py transfer-all craft1 --from 123 --to 456 
+# Send all crafting material from everyone to summoner 456
+python3 rarity.py transfer-all craft1 --to 456
+# Note that if the recipient (here 456) does not belong to the loaded address, the transfer will abort unless `--force` is specified.
 ```
 
 
 ## Advanced
 
-The rarity bot can take a number of optional arguments. Run `python3 rarity.py --help` for an up-to-date documentation.
+The rarity bot can run a number of commands with lots of optional arguments. Run `python3 rarity.py --help` and `python3 rarity.py [command] --help` for an up-to-date documentation.
 
+General help:
 ```
-usage: rarity.py [-h] [-k KEYFILE] [-p PASSWORD] [--import-key] [--txmode TXMODE]
-                 [-a [ACTIONS [ACTIONS ...]]] [--class SUMMONER_CLASS] [--attributes ATTRIBUTES] [-n COUNT]
-                 {run,list,summon,check_gas}
+usage: rarity.py [-h] {import-key,show,list,run,summon,transfer,transfer-all} ...
 
 Manage your rarity summoners
 
+optional arguments:
+  -h, --help            show this help message and exit
+
+Commands:
+  {import-key,show,list,run,summon,transfer,transfer-all}
+    import-key          Import a new private key.
+    show (list)         Show/list a variety of things, like gas price or summoners.
+    run                 Run the bot to take automatic configurable actions.
+    summon              Summon new summoners of a given class and optionally set attributes.
+    transfer            Transfer ERC20 assets between summoners.
+    transfer-all        Transfer all of an ERC20 asset to a particular summoner.
+
+```
+
+Help for `run`:
+```
+usage: rarity.py run [-h] [-k KEYFILE] [-p PASSWORD] [--txmode {single,batch}] [actions [actions ...]]
+
 positional arguments:
-  {run,list,summon,check_gas}
-                        Main command: "run" to run the bot (configure with --actions), "list" to simply list
-                        summoners, "summon" to create new summoners (configure with -n and --class)
-                        "check_gas" to show price in FTM of common actions,
+  actions               Actions to take. Will do everything by default. Select one or more from "list" (list Summoners on address), "adventure", "level_up", "claim_gold", "cellar" (send to cellar dungeon)
 
 optional arguments:
   -h, --help            show this help message and exit
+
+configuration:
   -k KEYFILE, --keyfile KEYFILE
                         Path to encrypted keyfile
   -p PASSWORD, --password PASSWORD
-                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the
-                        shell history. Use of interactive login is preferable if possible.
-  --import-key          Import a private key which will be stored encrypted in `privatekeyencrypted.json`
-  --txmode TXMODE       How transactions are processed. "legacy" to send them one by one and wait for the
-                        receipt each time. "batch" to send tx in batches and wait less often
-  -a [ACTIONS [ACTIONS ...]], --actions [ACTIONS [ACTIONS ...]]
-                        All actions to take. Will do everything by default. Select one or more from "list"
-                        (list Summoners on address), "adventure", "level_up", "claim_gold", "cellar" (send to
-                        cellar dungeon)
-  --class SUMMONER_CLASS
-                        Class used for summoning. Required if command is "summon". Can be class ID (1 to 11)
-                        or class name (e.g. "Bard").
-  --attributes ATTRIBUTES
-                        Json-formatted attributes to assign after summoning. Only used when command is
-                        "summon". If not provided, attributes won't be assigned. Should look like: '{"str":8,
-                        "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. The assignment must cost 32 AP to
-                        buy to be valid (you will be warned if it's not the case).
-  -n COUNT, --count COUNT
-                        Number of summoners to create if command is "summon". Default is 1
+                        Password to decrypt the keyfile. Be aware it will be available in plaintext in the shell history. Use of interactive login is preferable if possible.
+  --txmode {single,batch}
+                        How transactions are processed. "single" to send them one by one and wait for the receipt each time. "batch" to send tx in batches and wait less often.
 ```
 
 
 If your private key is not in the same directory (or if it is not called `privatekeyencrypted.json`), you can provide an alternative keyfile with the `--keyfile KEYFILE`. This allows you to maintain summoners on several addresses.
 
-```
+```sh
 python3 rarity.py run --keyfile key1.json
 python3 rarity.py run --keyfile key2.json
 ```
@@ -145,8 +176,7 @@ One way to avoid that is to use an environment variable and call `python3 rarity
 
 ## Using --actions to customise the run
 
-You can control the actions taken by the bot runs on a very granular level using `--actions action1 action2 etc`. 
-This is only available if the main command is "run".
+You can control the actions taken by the bot runs on a very granular level using `python3 rarity.py run action1 action2 etc`. 
 The available actions are:
 
 - "list": Print the list of summoners

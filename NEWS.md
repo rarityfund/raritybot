@@ -1,5 +1,8 @@
 # raritybot WIP (devel)
 
+- New commands `transfer` and `transfer-all` to manage gold and crafting material. 
+  Run `[python3 rarity.py]` `transfer --help` and `transfer-all --help` for details, or see the README for examples.
+
 - Revamped CLI by using argument groups and subparsers to handle subcommands. 
   Now each command (like `run`, `list`, `summon`, etc) will have its own argument namespace which will make life much easier!
   Each command will also have a dedicated help page! See `python3 rarity.py --help` for the top-level help and
