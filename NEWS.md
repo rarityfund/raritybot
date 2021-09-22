@@ -1,7 +1,4 @@
-# raritybot WIP (devel)
-
-- New commands `transfer` and `transfer-all` to manage gold and crafting material. 
-  Run `[python3 rarity.py]` `transfer --help` and `transfer-all --help` for details, or see the README for examples.
+# raritybot 1.3.0
 
 - Revamped CLI by using argument groups and subparsers to handle subcommands. 
   Now each command (like `run`, `list`, `summon`, etc) will have its own argument namespace which will make life much easier!
@@ -28,6 +25,10 @@
 - New command `import-key` to replace `--import_key`, which takes an option `--keyfile` argument to specify where to save the file.
   Simply do: `python3 rarity.py import-key --keyfile new_key.json`
 
+
+- New commands `transfer` and `transfer-all` to manage gold and crafting material. 
+  Run `[python3 rarity.py]` `transfer --help` and `transfer-all --help` for details, or see the README for examples.
+
 - Internal refactoring to make `rarity.py` smaller. Parser definition went to `cliparser.py` and command definitions went to `commands.py`
 
 - Improved listing of summoner info. Requires NEW DEPENDENCY `tabulate` to install with `pip3 install --user tabulate`. 
@@ -36,7 +37,7 @@
 
 - Now able to assign attributes to newly created summoners, via `--attributes` which takes a JSON-formatted string. For example, `summon --class Fighter --attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'`.
 
-# raritybot v1.2.0 (master)
+# raritybot v1.2.0
 
 - Add "command" as positional argument. Run the traditional script with `python3 rarity.py run`.
   New commands include "run", "list", "check_gas", "summon" and will include "craft" at some point.
