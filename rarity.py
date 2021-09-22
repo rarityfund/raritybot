@@ -44,7 +44,7 @@ if (__name__ == "__main__"):
     print_intro()
 
     # If the user wants to import a new key, we import and exit
-    if args.command == "import_key":
+    if args.command == "import-key":
         try:
             key.import_new_privatekey(args.keyfile)
         except key.InvalidInputError as e:
@@ -56,7 +56,7 @@ if (__name__ == "__main__"):
         print("""
         No keyfile found. Specify it with `--keyfile path/to/keyfile.json` or save it as `privatekeyencrypted.json`.
         You can import a new key (to create a new keyfile) with the `import-key` command:
-        `python3 rarity.py import_key`
+        `python3 rarity.py import-key`
         """)
         exit()
            
