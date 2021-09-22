@@ -13,9 +13,14 @@ class Transacter:
     # Contracts adresses
     contract_addresses = {
         "rarity": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb",
-        "summoner": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb", # Same as rarity but friendly name
+        "summoner": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb", # Same as rarity
+        "attributes": "0xB5F5AF1087A8DA62A23b08C00C6ec9af21F397a1",
         "gold": "0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2",
-        "cellar": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A"
+        "skills": "0x51C0B29A1d84611373BA301706c6B4b72283C80F",
+        "craft1": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A",
+        "cellar": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A", # Same as craft1
+        "crafting": "0xf41270836dF4Db1D28F7fd0935270e3A603e78cC",
+        "feats": "0x4F51ee975c01b0D6B29754657d7b3cC182f20d8a"
     }
 
     # Contracts adress checksums
@@ -129,50 +134,11 @@ class Transacter:
             "adventure": 70000,
             "level_up": 70000,
             "claim_gold": 120000,
-            "cellar": 120000
+            "cellar": 120000,
+            "assign_attributes": 130000
         }
         print("Gas price =", self.get_gas_price() * 1e9, "gwei\n")
         print("Max cost per action in FTM:")
         for action in max_gas_per_action:
             max_cost = max_gas_per_action[action] * self.get_gas_price()
             print(action.ljust(10, ' ') + " => " + str(round(max_cost, 6)) + " FTM")
-
-    def summon_from_class(self, summoner_class):
-        """Summon a new summoner of the specified class ID or class name. 
-           summoner_class can be either the ID or the class name. Returns the summoner ID"""
-        try:
-            class_id = int(summoner_class)
-        except ValueError:
-            try:
-                class_id = Summoner.classes.index(summoner_class)
-            except ValueError:
-                print("Invalid class name or ID: aborting")
-                return None 
-        return self.summon(class_id)
-
-    def summon(self, class_id):
-        """Summon a new summoner of the specified class. Returns the summoner ID"""
-        try:
-            class_name = Summoner.classes[class_id]
-        except IndexError:
-            print("Invalid class id: aborting")
-            return None 
-        summon_fun = self.contracts["summoner"].functions.summon(class_id)
-        tx_status = self.sign_and_execute(summon_fun, gas = 150000)
-        details = self.get_details_from_summon_receipt(tx_status["receipt"])
-        if details:
-            print(Fore.GREEN + "Summoned new " + details["class_name"] + " (ID=" + str(details["token_id"]) + ")")
-            return details["token_id"]
-        else:
-            print("Could not confirm summoner token_id")
-            return None
-
-    def get_details_from_summon_receipt(self, receipt):
-        try:
-            receipt_data = str(receipt.logs[1].data)
-            receipt_class_id = int(receipt_data[(1+2):(64+2)], 16)
-            receipt_token_id = int(receipt_data[(64+2):], 16)
-            receipt_class_name = Summoner.classes[receipt_class_id]
-            return {"token_id": receipt_token_id, "class_name": receipt_class_name}
-        except:
-            return None
