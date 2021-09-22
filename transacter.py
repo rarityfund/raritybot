@@ -3,6 +3,7 @@ from web3 import Web3
 import web3
 import requests
 from summoner import Summoner 
+import time 
 
 class Transacter:
     """Class in charge of preparing and signing transactions"""
@@ -12,8 +13,7 @@ class Transacter:
 
     # Contracts adresses
     contract_addresses = {
-        "rarity": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb",
-        "summoner": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb", # Same as rarity
+        "summoner": "0xce761d788df608bd21bdd59d6f4b54b2e27f25bb",
         "attributes": "0xB5F5AF1087A8DA62A23b08C00C6ec9af21F397a1",
         "gold": "0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2",
         "skills": "0x51C0B29A1d84611373BA301706c6B4b72283C80F",
@@ -35,11 +35,15 @@ class Transacter:
         self.w3 =  Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
         self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
         # Prepare all contracts only once
-        self.contracts = {cname: self.get_contract(cname) for cname in self.contract_addresses.keys()}
+        self.contracts = {cname: Transacter.rate_limit(self.get_contract(cname)) for cname in self.contract_addresses.keys()}
         self.session_cost = 0
         self.update_timestamp() # create self.timestamp
         self.pending_transactions = []
 
+    @staticmethod
+    def rate_limit(x, delay = 0.2):
+            time.sleep(delay)
+            return x
 
     def get_contract(self, contract_name):
         '''Get contract or raise a KeyError if contract isn't listed'''
