@@ -1,3 +1,9 @@
+# raritybot WIP
+
+- Fix bug where any ERC721 token (like a crafted item) was treated like a summoner
+
+- Add command `show items` to list crafted items (from crafting (I) contract). No item info for now, this is very basic.
+
 # raritybot 1.3.0
 
 - Revamped CLI by using argument groups and subparsers to handle subcommands. 

@@ -62,3 +62,18 @@ def list_summoners(address, transacter, verbose = True):
 
     return summoners
 
+def list_items(address, verbose = True):
+    '''List items owned by the given address'''
+    
+    print("Scanning for items, this may take a while...")
+    token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["crafting1"])
+
+    print(Fore.GREEN + "Found " + str(len(token_ids)) + " items!\n")
+
+    # Print data if verbose
+    if token_ids and verbose:
+        for id in token_ids:
+            print(Fore.WHITE + "Item " + str(id))
+
+    return token_ids
+

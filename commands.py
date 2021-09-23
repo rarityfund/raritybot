@@ -1,5 +1,5 @@
 from summoner import InvalidAmountError, InvalidSummonerError, Summoner
-from list_summoners import list_summoners
+from list_summoners import list_items, list_summoners
 from summoning import SummoningEngine
 from colorama import Fore
 import key
@@ -11,6 +11,10 @@ def command_show(args, transacter):
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
+    elif args.what == "items":
+        # Listing crafted items
+        list_items(transacter.address, verbose = True)
+        
 
 def command_summon(args, transacter):
     # Summoning new summoners
