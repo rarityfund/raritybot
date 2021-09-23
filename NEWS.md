@@ -1,3 +1,11 @@
+# raritybot 1.3.1
+
+- Bug fix: any ERC721 token (like a crafted item) was treated like a summoner
+
+- Add command `show items` to list crafted items (from crafting (I) contract). No item info for now, this is very basic.
+
+- Now rate limiting calls to api.ftmscan to 5 requests/s to avoid "Rate limit exceeded" error.s 
+
 # raritybot 1.3.0
 
 - Revamped CLI by using argument groups and subparsers to handle subcommands. 

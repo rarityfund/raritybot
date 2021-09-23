@@ -37,7 +37,7 @@ def create_parser():
     parser_list = subparsers.add_parser("show", aliases = ["list"], parents = [shared_parser],
                         help = "Show/list a variety of things, like gas price or summoners.")
     parser_list.add_argument("what", help = "What to show. By default, list summoners.", nargs = '?',
-                        choices = ["summoners", "gas"], default = "summoners")
+                        choices = ["summoners", "gas", "items"], default = "summoners")
 
     # Command RUN takes argument --actions:
     parser_run = subparsers.add_parser("run", parents=[shared_parser],

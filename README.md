@@ -1,4 +1,4 @@
-# Rarity bot v1.3.0
+# Rarity bot v1.3.1
 
 ___________________________________________________
 
@@ -191,5 +191,7 @@ The available actions are:
 There is no hard cap for gas price. Currently, the script ask the gas price to the web3 provider, **if fees are very high when you run the script, it will not warn you**.
 
 *By Olocrom & Asa*
+
+Powered by ftmscan.com and rpc.ftm.tools APIs.
 
 Tips some FTM (on the phantom network) if you liked this 🙂 : 0x128bd256da23c382D3D27a46FEAf32212154f159

@@ -123,7 +123,7 @@ class Summoner:
             tx_status = self.transacter.sign_and_execute(adventure_fun, gas = 70000)
             if tx_status["status"] == "success":
                 print("The summoner came back with success from his adventure!")
-                self.update_summoner_info()
+                self.xp += 250
 
 
     ### LEVEL UP ----------------------------
@@ -135,20 +135,20 @@ class Summoner:
         return int(self.xp_required()) <= int(self.xp)
 
     def check_level_up(self):
+        self.update_summoner_info()
         xp_required = self.contracts["summoner"].functions.xp_required(int(self.level)).call() / 1e18
         return int(xp_required) <= int(self.xp)
 
     def level_up(self):
         # Note the fast check short circuits the long check if False
         if self.fast_check_level_up() and self.check_level_up():
-            print(Fore.WHITE + str(self) + " is trying to pass level " + str(self.level) + "!")
+            print(Fore.WHITE + str(self) + " is trying to pass level " + str(self.level + 1) + "!")
             levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
             tx_status = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
             if tx_status["status"] == "success":
                 print(Fore.YELLOW + "Level passed!")
-            else: 
-                print(Fore.WHITE + "Transaction failed. The summoner was incapable to pass a new level")
-
+                self.level += 1
+                self.xp = 0
 
     ### CELLAR (CRAFT1) -------------------------------------------
 
