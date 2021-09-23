@@ -105,4 +105,14 @@ def create_parser():
                         Needed to transfer assets to a summoner not owned by this address.''',
                         action = "store_true")
 
+    # Command SEND-SUMMONER: almost the same as TRANSFER
+    parser_send_summoner = subparsers.add_parser("send-summoner", parents=[shared_parser],
+                        help = "Send summoners to another address. Be careful.")
+    parser_send_summoner.add_argument('who', help='Who to transfer. Either a summoner ID or "all" to send everyone.')
+    parser_send_summoner.add_argument('--to', dest = "to_address", required=True,
+                        help='Destination address of new owner, starting with "0x"',
+                        default = "")
+    parser_send_summoner.add_argument('--force',  help='''Force transfer to proceed. Needed when transferring ALL summoners.''',
+                        action = "store_true")
+
     return parser

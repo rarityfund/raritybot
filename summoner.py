@@ -1,4 +1,5 @@
 from colorama import Fore
+from web3.main import Web3
 
 class InvalidSummonerError(Exception):
     """Used to indicate an invalid summoner is handled"""
@@ -6,6 +7,10 @@ class InvalidSummonerError(Exception):
 
 class InvalidAmountError(Exception):
     """Used to indicate invalid amounts during transfers"""
+    pass
+
+class InvalidAddressError(Exception):
+    """Used to indicate invalid addresses"""
     pass
 
 class Summoner:
@@ -215,4 +220,18 @@ class Summoner:
             return None 
         # Do the transfer
         transfer_fun = contract.functions.transfer(self.token_id, to_id, amount)
+        return self.transacter.sign_and_execute(transfer_fun, gas = 70000)
+
+    def transfer_to_new_owner(self, new_owner_address):
+        """Transfer the summoner to a new owner"""
+        if not new_owner_address.startswith("0x") or len(new_owner_address) != 42:
+            raise InvalidAddressError("Invalid address: " + str(new_owner_address))
+        if new_owner_address.lower() == self.transacter.address.lower():
+            raise InvalidAddressError("Invalid address: summoner already belongs to " + str(new_owner_address))
+        
+        print("Sending " + str(self) + " to " + str(new_owner_address))
+        old_address_checksum = Web3.toChecksumAddress(self.transacter.address)
+        new_address_checksum = Web3.toChecksumAddress(new_owner_address)
+
+        transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(old_address_checksum, new_address_checksum, self.token_id)
         return self.transacter.sign_and_execute(transfer_fun, gas = 70000)

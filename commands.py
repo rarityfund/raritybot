@@ -1,4 +1,4 @@
-from summoner import InvalidAmountError, InvalidSummonerError, Summoner
+from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
 from summoning import SummoningEngine
 from colorama import Fore
@@ -118,7 +118,6 @@ def command_transfer(args, transacter, transfer_all = False):
     if args.from_id == "all":
         senders = summoners
     elif args.from_id not in summoner_ids:
-        print(summoner_ids)
         raise InvalidSummonerError("Sender (" + args.from_id + ") is not owned by this address.")
     else:
         try:
@@ -149,4 +148,41 @@ def command_transfer(args, transacter, transfer_all = False):
             raise InvalidAmountError("Invalid token: cannot transfer")
 
     transacter.wait_for_pending_transations()
+
+
+def command_send_summoner(args, transacter):
+    if not args.who:
+        raise InvalidSummonerError("Must specify who to send.")
+    
+    summoners = list_summoners(transacter.address, transacter, verbose = False)
+    summoner_ids = [str(round(s.token_id)) for s in summoners]
+    
+    # Set sender(s)
+    if args.who == "all":
+        if not args.force:
+            print("Warning: you are about to send ALL your summoners! Use `--force` to force the transfer.")
+            return None
+        senders = summoners
+    elif args.who not in summoner_ids:
+        raise InvalidSummonerError("Summoner (" + args.who + ") is not owned by this address.")
+    else:
+        try:
+            sender_id = int(args.who)
+        except ValueError:
+            raise InvalidSummonerError("Invalid sender ID")
+        senders = [Summoner(sender_id, transacter)]
+
+    # Check recipient
+    if not args.to_address:
+        raise InvalidAddressError("Must provide an address with `--to`")
+    
+    # Do the transfer(s)
+    for sender in senders:
+        try:
+            sender.transfer_to_new_owner(args.to_address)
+        except InvalidAddressError as e:
+            print(e)
+
+    transacter.wait_for_pending_transations()
+
 

@@ -1,10 +1,14 @@
-# raritybot 1.3.1
+# raritybot WIP (devel)
+
+- New command `send-summoner` to transfer summoners to another address. Can send one summoner (`send-summoner 1234 --to 0xa123434...`) or all of them (`send-summoner all --to 0xa1234... --force`). When sending all summoners, `--force` is required for safety.
+
+# raritybot 1.3.1 (master)
 
 - Bug fix: any ERC721 token (like a crafted item) was treated like a summoner
 
 - Add command `show items` to list crafted items (from crafting (I) contract). No item info for now, this is very basic.
 
-- Now rate limiting calls to api.ftmscan to 5 requests/s to avoid "Rate limit exceeded" error.s 
+- Now rate limiting calls to api.ftmscan to 5 requests/s to avoid "Rate limit exceeded" errors. 
 
 # raritybot 1.3.0
 
