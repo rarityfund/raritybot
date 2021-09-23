@@ -16,7 +16,7 @@ def get_address_from_args(args):
     try:
         owner_address = key.load_address(args.keyfile)
     except key.InvalidInputError as e:
-        print(e)
+        print(Fore.RED + str(e) + Fore.RESET)
         exit()
     print(Fore.WHITE + "ADDRESS FOUND, Opening " + owner_address + "\n")
     return owner_address
@@ -31,7 +31,7 @@ def get_private_key_from_args(args):
             # Otherwise we prompt the user to unlock the file
             private_key = key.unlock_private_key(args.keyfile)
     except key.InvalidInputError as e:
-        print(e)
+        print(Fore.RED + str(e) + Fore.RESET)
         exit()
     return private_key
 
@@ -48,7 +48,7 @@ if (__name__ == "__main__"):
         try:
             key.import_new_privatekey(args.keyfile)
         except key.InvalidInputError as e:
-            print(e)
+            print(Fore.RED + str(e) + Fore.RESET)
         exit()
 
     # If keyfile doesn't exist, we exit
@@ -57,7 +57,7 @@ if (__name__ == "__main__"):
         No keyfile found. Specify it with `--keyfile path/to/keyfile.json` or save it as `privatekeyencrypted.json`.
         You can import a new key (to create a new keyfile) with the `import-key` command:
         `python3 rarity.py import-key`
-        """)
+        """ + Fore.RESET)
         exit()
            
     # Create transacter from address and private_key (the latter only if we need to sign tx)
@@ -75,7 +75,7 @@ if (__name__ == "__main__"):
     print("Gas price: " + str(round(gas_price_gwei, 1)) + " gwei")
     if gas_price_gwei > args.maxgasprice:
         print(Fore.RED + "Gas price too high (>" + \
-            str(round(args.maxgasprice, 1)) + "). Aborting.")
+            str(round(args.maxgasprice, 1)) + "). Aborting." + Fore.RESET)
         exit()
 
     # Running the main command
@@ -111,6 +111,6 @@ if (__name__ == "__main__"):
         
     # Wait for all tx to complete (just in case!)
     transacter.wait_for_pending_transations()
-    print("\n" + Fore.RED + "Total session cost: " + str(round(transacter.session_cost, 6)) + " FTM")
+    print("\n" + Fore.RED + "Total session cost: " + str(round(transacter.session_cost, 6)) + " FTM" + Fore.RESET)
     
 

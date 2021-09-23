@@ -26,7 +26,7 @@ def command_summon(args, transacter):
         try:
             summoning_attributes = summoning_engine.parse_attributes(args.attributes)
         except key.InvalidInputError as e:
-            print(Fore.RED + str(e))
+            print(Fore.RED + str(e) + Fore.RESET)
             exit()
 
     if not args.summoner_class:
@@ -74,7 +74,7 @@ def command_run(args, transacter):
     print("\n")
 
     if not summoners:
-        print("This address doesn't contains any rarities, bot is exiting...")
+        print("This address doesn't contains any rarities, bot is exiting..." + Fore.RESET)
         exit()
 
     print("Looking for things to do ...")
