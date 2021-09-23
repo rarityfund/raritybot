@@ -192,4 +192,6 @@ There is no hard cap for gas price. Currently, the script ask the gas price to t
 
 *By Olocrom & Asa*
 
+Powered by ftmscan.com and rpc.ftm.tools APIs.
+
 Tips some FTM (on the phantom network) if you liked this 🙂 : 0x128bd256da23c382D3D27a46FEAf32212154f159
