@@ -70,6 +70,13 @@ if (__name__ == "__main__"):
         private_key = get_private_key_from_args(args)
         transacter = Transacter(owner_address, private_key = private_key, txmode = args.txmode)
 
+    # Check gas price
+    gas_price_gwei = transacter.get_gas_price() * 1e9
+    print("Gas price: " + str(round(gas_price_gwei, 1)) + " gwei")
+    if gas_price_gwei > args.maxgasprice:
+        print(Fore.RED + "Gas price too high (>" + \
+            str(round(args.maxgasprice, 1)) + "). Aborting.")
+        exit()
 
     # Running the main command
 

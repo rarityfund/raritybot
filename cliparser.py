@@ -19,7 +19,9 @@ def create_parser():
                         "single" to send them one by one and wait for the receipt each time.
                         "batch" to send tx in batches and wait less often.''',
                         default = "single", choices = ["single", "batch"])
-
+    config_group.add_argument('-g', '--maxgasprice', help='''Optional max gas price (integer in gwei) you're willing to pay. 
+    Abort if gas price is superior. Gas price is typically between 100 and 500 gwei.''',
+                        default = 10000, type = int)
 
     # This is the top level parser to which we'll add subparsers
     parser = argparse.ArgumentParser(description='Manage your rarity summoners')
