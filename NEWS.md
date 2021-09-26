@@ -1,4 +1,4 @@
-# raritybot WIP (devel)
+# raritybot 1.3.2
 
 - Start implementing crafting: new command `show crafting-proba -n DC` will show crafting probabilities for an item of a give DC (20 by default) for a range of INT and craft level. Crafting probabilities only depend on INT level, craft level, item DC and how much crafting mats you're willing to spend. Low-probability combinations (<70%) are not shown.
 
@@ -17,7 +17,7 @@
 
 - New command `send-summoner` to transfer summoners to another address. Can send one summoner (`send-summoner 1234 --to 0xa123434...`) or all of them (`send-summoner all --to 0xa1234... --force`). When sending all summoners, `--force` is required for safety.
 
-# raritybot 1.3.1 (master)
+# raritybot 1.3.1
 
 - Bug fix: any ERC721 token (like a crafted item) was treated like a summoner
 
