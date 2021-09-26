@@ -50,7 +50,7 @@ class Codex:
             size = self.codex_sizes[codex_name]
         except KeyError:
             raise InvalidItemError("Invalid codex name")
-        return [self.get_item(codex_name, id) for id in range(1, size+1)]
+        return [Item.create(codex_name, id, self) for id in range(1, size+1)]
 
         
 class Item:
@@ -89,7 +89,7 @@ class Good(Item):
 
     def parse_item_data(self, item_data):
         (item_id, cost, weight, name, description) = item_data
-        self.item_id = item_id,
+        self.item_id = item_id
         self.cost = cost
         self.weight = weight
         self.name = name
