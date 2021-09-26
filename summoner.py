@@ -249,3 +249,14 @@ class Summoner:
 
         transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(old_address_checksum, new_address_checksum, self.token_id)
         return self.transacter.sign_and_execute(transfer_fun, gas = 70000, signer = self.signer)
+
+    # SKILLS
+    def get_skills(self):
+        """Dictionary of skill names to skill score"""
+        skills_vec = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        class_skills = self.contracts["skills"].functions.class_skills(self.class_id).call()
+        skill_names = self.contracts["skills"].functions.class_skills_by_name(self.class_id).call()
+
+        skills = [score for i,score in enumerate(skills_vec) if class_skills[i]]
+        skill_dict = {skill_names[i]: score for i, score in enumerate(skills)}
+        return skill_dict
