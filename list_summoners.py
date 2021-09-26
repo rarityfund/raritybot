@@ -1,5 +1,4 @@
 from colorama import Fore
-from tabulate import tabulate
 import requests
 from transacter import Transacter
 
@@ -44,7 +43,7 @@ def list_tokens_from_contract(owner_address, contract_address, limit = 0):
     return token_ids
 
 
-def list_summoners(address, transacter, set_signer = None, verbose = True, limit = 0):
+def list_summoners(address, transacter, set_signer = None, limit = 0):
     '''List summoners owned by the given address'''
     
     print("Scanning for summoners, this may take a while...")
@@ -59,26 +58,15 @@ def list_summoners(address, transacter, set_signer = None, verbose = True, limit
         summoner = Summoner(id, transacter, signer = set_signer)
         summoners.append(summoner)
 
-    # Print data if verbose
-    if verbose:
-        summoner_data = [summoner.get_details() for summoner in summoners]
-        tbl = tabulate(summoner_data, headers = "keys", tablefmt = "fancy")
-        print(Fore.WHITE + tbl)
-
     return summoners
 
-def list_items(address, verbose = True, limit = 0):
+def list_items(address, limit = 0):
     '''List items owned by the given address'''
     
     print("Scanning for items, this may take a while...")
     token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["crafting1"], limit = limit)
 
     print(Fore.GREEN + "Found " + str(len(token_ids)) + " items!\n")
-
-    # Print data if verbose
-    if token_ids and verbose:
-        for id in token_ids:
-            print(Fore.WHITE + "Item " + str(id))
 
     return token_ids
 

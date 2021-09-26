@@ -119,6 +119,26 @@ class Weapon(Item):
     base_type = "weapon"
     codex_name = "weapons"
 
+    proficiency_by_id = {
+        1: "Simple",
+        2: "Martial",
+        3: "Exotic"
+    }
+
+    encumbrance_by_id = {
+            1: "Unarmed",
+            2: "Light Melee Weapons",
+            3: "One-Handed Melee Weapons",
+            4: "Two-Handed Melee Weapons",
+            5: "Ranged Weapons",
+    }
+    
+    damage_type_by_id = {
+        1: "Bludgeoning",
+        2: "Piercing",
+        3: "Slashing"
+    }
+
     def __init__(self, item_data):
         self.parse_item_data(item_data)
     
@@ -143,17 +163,25 @@ class Weapon(Item):
             "item_id": self.item_id,
             "name": self.name,
             "cost": self.cost,
-            "weight (encombrance)": f"{self.weight} ({self.encumbrance})",
-            "proficiency": self.proficiency,
-            "damage (type)": f"{self.damage} ({self.damage_type})",
-            "critical (mod)": f"{self.critical} ({self.critical_modifier})",
-            "range": self.range_increment
+            "weight": self.weight,
+            "encumbrance": self.encumbrance_by_id[self.encumbrance],
+            "proficiency": self.proficiency_by_id[self.proficiency],
+            "damage (type)": f"{self.damage} ({self.damage_type_by_id[self.damage_type]})",
+            "critical (crit mod)": str(self.critical) + f"({self.critical_modifier})" if self.critical_modifier else '',
+            "range_increment": self.range_increment
         }
 
 class Armor(Item):
 
     base_type = "armor"
     codex_name = "armors"
+
+    proficiency_by_id = {
+        1: "Light",
+        2: "Medium",
+        3: "Heavy",
+        4: "Shield"
+    }
 
     def __init__(self, item_data):
         self.parse_item_data(item_data)
@@ -179,7 +207,7 @@ class Armor(Item):
             "name": self.name,
             "cost": self.cost,
             "weight": self.weight,
-            "proficiency": self.proficiency,
+            "proficiency": self.proficiency_by_id[self.proficiency],
             "armor_bonus": self.armor_bonus,
             "max_dex_bonus": self.max_dex_bonus,
             "penalty": self.penalty,

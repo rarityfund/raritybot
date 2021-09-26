@@ -10,7 +10,8 @@ def command_show(args, transacter):
     if args.what == "summoners":
         # Listing summoners
         owner_address = get_address_from_args(args)
-        list_summoners(owner_address, transacter, verbose = True, limit = args.limit)
+        summoners = list_summoners(owner_address, transacter, limit = args.limit)
+        Summoner.print_summoners(summoners)
 
     elif args.what == "gas": 
         # Printing gas price and action costs
@@ -19,7 +20,7 @@ def command_show(args, transacter):
     elif args.what == "items":
         # Listing crafted items
         owner_address = get_address_from_args(args)
-        list_items(owner_address, verbose = True, limit = args.limit)
+        list_items(owner_address, limit = args.limit)
     
     elif args.what == "craftable":
         codex = Codex()
@@ -90,9 +91,11 @@ def command_summon(args, transacter):
 def command_run(args, transacter):
     owner_address = get_address_from_args(args)
     signer = get_signer_from_args(args)
-    print_list = "list" in args.actions
-    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = print_list)
-    print("\n")
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
+
+    if "list" in args.actions:
+        Summoner.print_summoners(summoners)
+        print("\n")
 
     if not summoners:
         print("This address doesn't contains any rarities, bot is exiting..." + Fore.RESET)
@@ -134,7 +137,7 @@ def command_transfer(args, transacter, transfer_all = False):
     
     owner_address = get_address_from_args(args)
     signer = get_signer_from_args(args)
-    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = False)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
     summoner_ids = [str(round(s.token_id)) for s in summoners]
     
     # Set sender(s)
@@ -179,7 +182,7 @@ def command_send_summoner(args, transacter):
     
     owner_address = get_address_from_args(args)
     signer = get_signer_from_args(args)
-    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = False)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
     summoner_ids = [str(round(s.token_id)) for s in summoners]
     
     # Set sender(s)

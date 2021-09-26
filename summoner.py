@@ -1,5 +1,6 @@
 from colorama import Fore
 from web3.main import Web3
+from tabulate import tabulate
 
 class InvalidSummonerError(Exception):
     """Used to indicate an invalid summoner is handled"""
@@ -59,7 +60,13 @@ class Summoner:
             "Next Cellar": self.seconds_to_hms(self.time_to_next_cellar()),
             "Cellar Loot": round(self.expected_cellar_loot())
         }
-                
+
+    @staticmethod
+    def print_summoners(summoners):
+        details = [s.get_details() for s in summoners]
+        tbl = tabulate(details, headers = "keys", tablefmt = "fancy")
+        print(Fore.WHITE + tbl)
+  
     @staticmethod
     def seconds_to_hms(secs):
         if (secs <= 0):
