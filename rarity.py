@@ -10,7 +10,7 @@ from transacter import Signer, Transacter
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError
 
 def print_intro():
-    print('Welcome to Rarity bot v1.3.2 (devel version)')
+    print('Welcome to Rarity bot v1.3.2')
 
 def get_address_from_args(args, verbose = True):
     try:
