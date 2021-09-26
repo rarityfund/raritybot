@@ -25,14 +25,8 @@ def command_show(args, transacter):
     
     elif args.what == "craftable":
         codex = Codex()
-        
-        print("\n --- GOODS ---")
         Item.print_items(codex.get_items("goods"))
-
-        print("\n --- WEAPONS ---")
         Item.print_items(codex.get_items("weapons"))
-        
-        print("\n --- ARMORS ---")
         Item.print_items(codex.get_items("armors"))
         
 

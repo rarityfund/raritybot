@@ -10,15 +10,16 @@ from transacter import Signer, Transacter
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError
 
 def print_intro():
-    print(Fore.RED + 'Welcome to Rarity bot v1.3.1')
+    print('Welcome to Rarity bot v1.3.1.9000 (devel version)')
 
-def get_address_from_args(args):
+def get_address_from_args(args, verbose = True):
     try:
         owner_address = key.load_address(args.keyfile)
     except key.InvalidInputError as e:
         print(Fore.RED + str(e) + Fore.RESET)
         exit()
-    print(Fore.WHITE + "Using address: " + owner_address + "\n")
+    if verbose:
+        print(Fore.WHITE + "Using address: " + owner_address + "\n")
     return owner_address
 
         
@@ -36,7 +37,7 @@ def get_private_key_from_args(args):
     return private_key
 
 def get_signer_from_args(args):
-    owner_address = get_address_from_args(args)
+    owner_address = get_address_from_args(args, verbose = False)
     private_key = get_private_key_from_args(args)
     return Signer(owner_address, private_key = private_key)
 

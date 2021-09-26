@@ -87,9 +87,24 @@ class Item:
 
     @staticmethod
     def print_items(items):
-        details = [item.get_details() for item in items]
-        tbl = tabulate(details, headers = "keys", tablefmt = "fancy")
-        print(Fore.WHITE + tbl)
+        def print_tbl(dict):
+            print(Fore.WHITE + tabulate(dict, headers = "keys", tablefmt = "pretty"))
+
+        goods = [item.get_details() for item in items if item.base_type == "goods"]
+        if goods:
+            print("\n --- GOODS ---")
+            print_tbl(goods)
+
+        armors = [item.get_details() for item in items if item.base_type == "armors"]
+        if armors:
+            print("\n --- ARMORS ---")
+            print_tbl(armors)
+
+        weapons = [item.get_details() for item in items if item.base_type == "weapons"]
+        if weapons:
+            print("\n --- WEAPONS ---")
+            print_tbl(weapons)
+        
 
 
 class Good(Item):

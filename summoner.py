@@ -64,7 +64,7 @@ class Summoner:
     @staticmethod
     def print_summoners(summoners):
         details = [s.get_details() for s in summoners]
-        tbl = tabulate(details, headers = "keys", tablefmt = "fancy")
+        tbl = tabulate(details, headers = "keys", tablefmt = "pretty")
         print(Fore.WHITE + tbl)
   
     @staticmethod
