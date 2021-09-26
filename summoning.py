@@ -5,8 +5,9 @@ from colorama import Fore
 
 class SummoningEngine:
 
-    def __init__(self, transacter):
+    def __init__(self, transacter, signer):
         self.transacter = transacter
+        self.signer = signer
 
     def summon_from_class(self, summoner_class):
         """Summon a new summoner of the specified class ID or class name. 
@@ -29,7 +30,7 @@ class SummoningEngine:
             print("Invalid class id: aborting")
             return None 
         summon_fun = self.transacter.contracts["summoner"].functions.summon(class_id)
-        tx_status = self.transacter.sign_and_execute(summon_fun, gas = 150000)
+        tx_status = self.transacter.sign_and_execute(summon_fun, gas = 150000, signer = self.signer)
         details = self.get_details_from_summon_receipt(tx_status["receipt"])
         if details:
             print(Fore.GREEN + "Summoned new " + details["class_name"] + " (ID=" + str(details["token_id"]) + ")")
@@ -93,4 +94,4 @@ class SummoningEngine:
         attributes["str"], attributes["dex"], attributes["const"], 
         attributes["int"], attributes["wis"], attributes["cha"])
 
-        return self.transacter.sign_and_execute(point_buy_fun, gas = 130000)
+        return self.transacter.sign_and_execute(point_buy_fun, gas = 130000, signer = self.signer)

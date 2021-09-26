@@ -5,8 +5,28 @@ import requests
 from summoner import Summoner 
 import time 
 
+class Signer:
+    """Class in charge of signing transactions"""
+    def __init__(self, address, private_key):
+        self.address = address
+        self.private_key = private_key
+        self.w3 =  Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
+        self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
+
+    def sign(self, w3fun, gas):
+        """
+        Sign a transaction
+        """
+        tx = w3fun.buildTransaction({
+            'chainId': 250,
+            'gas': gas,
+            # TODO: gasprice is estimated automatically for now, will need to optimize it later
+            'nonce': self.nonce})
+        self.nonce = self.nonce + 1
+        return self.w3.eth.account.sign_transaction(tx, private_key = self.private_key)
+
 class Transacter:
-    """Class in charge of preparing and signing transactions"""
+    """Class in charge of interacting with the blockchain"""
 
     # Configuration constants
     API_FTMSCAN_TOKEN = "VU7CVDPWW2GSFM7JWFCIP49AE9EPJVVSC4"
@@ -26,19 +46,15 @@ class Transacter:
     # Contracts adress checksums
     contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
-    
-    def __init__(self, address, private_key = None, txmode = "legacy"):
+    def __init__(self, txmode = "single"):
         """Create a transacter. If private key is not given, won't be able to sign anything but can still read contracts."""
-        self.address = address
-        self.private_key = private_key
         self.txmode = txmode
         self.w3 =  Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
-        self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
         # Prepare all contracts only once
         self.contracts = {cname: Transacter.rate_limit(self.get_contract(cname)) for cname in self.contract_addresses.keys()}
-        self.session_cost = 0
         self.update_timestamp() # create self.timestamp
         self.pending_transactions = []
+        self.session_cost = 0
 
     @staticmethod
     def rate_limit(x, delay = 0.2):
@@ -48,13 +64,13 @@ class Transacter:
     def get_contract(self, contract_name):
         '''Get contract or raise a KeyError if contract isn't listed'''
         return self.w3.eth.contract(address = self.contract_checksums[contract_name], 
-                                    abi = self.get_abi(self.contract_addresses[contract_name]))
+                                    abi = Transacter.get_abi(self.contract_addresses[contract_name]))
 
-
-    def get_abi(self, contract_address):
+    @staticmethod
+    def get_abi(contract_address):
         '''Get abi from contract address'''
         abi_contract_url = "https://api.ftmscan.com/api?module=contract&action=getabi&address=" + \
-            contract_address + "&apikey=" + self.API_FTMSCAN_TOKEN
+            contract_address + "&apikey=" + Transacter.API_FTMSCAN_TOKEN
         try:
             res = requests.get(abi_contract_url)
             res_json = res.json()
@@ -69,29 +85,21 @@ class Transacter:
     def get_gas_price(self):
         return self.w3.eth.gas_price / 1e18
 
-    def sign_and_execute(self, w3fun, gas):
+    def sign_and_execute(self, w3fun, gas, signer):
         """
-        Sign and execute a web3 function call. 
-        Returns a dict with {status, tx_hash, tx_receipt}.
+        Sign and execute tx using signer. Returns a dict with {status, tx_hash, tx_receipt}.
         Status can be one of of "pending", "success" or "failure".
         For pending tx, tx_receipt will be `None`.
         """
-        if not self.private_key:
-            raise PermissionError("Private key not provided!")
-        tx = w3fun.buildTransaction({
-            'chainId': 250,
-            'gas': gas,
-            # TODO: gasprice is estimated automatically for now, will need to optimize it later
-            'nonce': self.nonce})
-        tx_signed = self.w3.eth.account.sign_transaction(tx, private_key = self.private_key)
+        if not signer:
+            raise PermissionError("Cannot sign without a signer with a private key")
+        tx_signed = signer.sign(w3fun, gas)
         self.w3.eth.send_raw_transaction(tx_signed.rawTransaction)
-        self.nonce = self.nonce + 1
         tx_hash = self.w3.toHex(self.w3.keccak(tx_signed.rawTransaction))
-        
         current_gas_price = self.get_gas_price()
         estimated_cost = gas * current_gas_price
         print("Transaction sent, paying up to " + str(round(estimated_cost, 6)) + " FTM, id: " + tx_hash)
-        
+
         if self.txmode == "batch":
             self.pending_transactions.append({"tx_hash": tx_hash, "gas_price": current_gas_price})
             return {"status": "pending", "hash": tx_hash, "receipt": None}
@@ -101,7 +109,6 @@ class Transacter:
             tx_receipt = self.wait_for_tx(tx_hash, gas_price_for_log = current_gas_price)
             tx_status = "success" if tx_receipt.status == 1 else "failure"
             return {"status": tx_status, "hash": tx_hash, "receipt": tx_receipt}
-
 
     def wait_for_tx(self, tx_hash, gas_price_for_log, wait_timeout = 360):
         # Wait for receipt
@@ -141,7 +148,6 @@ class Transacter:
             "cellar": 120000,
             "assign_attributes": 130000
         }
-        print("Gas price =", self.get_gas_price() * 1e9, "gwei\n")
         print("Max cost per action in FTM:")
         for action in max_gas_per_action:
             max_cost = max_gas_per_action[action] * self.get_gas_price()

@@ -1,3 +1,4 @@
+from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
 from summoning import SummoningEngine
@@ -7,18 +8,21 @@ import key
 def command_show(args, transacter):
     if args.what == "summoners":
         # Listing summoners
-        list_summoners(transacter.address, transacter, verbose = True, limit = args.limit)
+        owner_address = get_address_from_args(args)
+        list_summoners(owner_address, transacter, verbose = True, limit = args.limit)
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
     elif args.what == "items":
         # Listing crafted items
-        list_items(transacter.address, verbose = True, limit = args.limit)
+        owner_address = get_address_from_args(args)
+        list_items(owner_address, verbose = True, limit = args.limit)
         
 
 def command_summon(args, transacter):
     # Summoning new summoners
-    summoning_engine = SummoningEngine(transacter)
+    signer = get_signer_from_args(args)
+    summoning_engine = SummoningEngine(transacter, signer = signer)
 
     # Parse attributes if provided
     summoning_attributes = None
@@ -44,10 +48,10 @@ def command_summon(args, transacter):
         for receipt in receipts:
             summon_details = summoning_engine.get_details_from_summon_receipt(receipt)
             if summon_details:
-                print(Summoner(summon_details["token_id"], transacter).get_details())
+                print(Summoner(summon_details["token_id"], transacter))
                 summoner_ids.append(summon_details["token_id"])
             else:
-                print("Could not get summon data - CANNOT ASSIGN ATTRIBUTES")
+                print(Fore.RED + "Could not get summon data - CANNOT ASSIGN ATTRIBUTES")
         # Now assigning attributes if provided
         if summoning_attributes:
             for summoner_id in summoner_ids:
@@ -66,11 +70,13 @@ def command_summon(args, transacter):
                 ("s" if len(summoner_ids) > 1 else "") + ":")
         
         for token_id in summoner_ids:
-            print(Summoner(token_id, transacter).get_details())
+            print(Summoner(token_id, transacter))
 
 def command_run(args, transacter):
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
     print_list = "list" in args.actions
-    summoners = list_summoners(transacter.address, transacter, verbose = print_list)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = print_list)
     print("\n")
 
     if not summoners:
@@ -111,7 +117,9 @@ def command_transfer(args, transacter, transfer_all = False):
     if not args.from_id:
         raise InvalidSummonerError("Must specify a sender with `--from`")
     
-    summoners = list_summoners(transacter.address, transacter, verbose = False)
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = False)
     summoner_ids = [str(round(s.token_id)) for s in summoners]
     
     # Set sender(s)
@@ -124,7 +132,7 @@ def command_transfer(args, transacter, transfer_all = False):
             sender_id = int(args.from_id)
         except ValueError:
             raise InvalidSummonerError("Invalid sender ID")
-        senders = [Summoner(sender_id, transacter)]
+        senders = [Summoner(sender_id, transacter, signer = signer)]
 
     # Check recipient
     if args.to_id not in summoner_ids and not args.force:
@@ -154,7 +162,9 @@ def command_send_summoner(args, transacter):
     if not args.who:
         raise InvalidSummonerError("Must specify who to send.")
     
-    summoners = list_summoners(transacter.address, transacter, verbose = False)
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer, verbose = False)
     summoner_ids = [str(round(s.token_id)) for s in summoners]
     
     # Set sender(s)
@@ -170,7 +180,7 @@ def command_send_summoner(args, transacter):
             sender_id = int(args.who)
         except ValueError:
             raise InvalidSummonerError("Invalid sender ID")
-        senders = [Summoner(sender_id, transacter)]
+        senders = [Summoner(sender_id, transacter, signer = signer)]
 
     # Check recipient
     if not args.to_address:

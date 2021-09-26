@@ -6,7 +6,7 @@ import argparse
 import key
 import commands
 import cliparser
-from transacter import Transacter
+from transacter import Signer, Transacter
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError
 
 def print_intro():
@@ -18,7 +18,7 @@ def get_address_from_args(args):
     except key.InvalidInputError as e:
         print(Fore.RED + str(e) + Fore.RESET)
         exit()
-    print(Fore.WHITE + "ADDRESS FOUND, Opening " + owner_address + "\n")
+    print(Fore.WHITE + "Using address: " + owner_address + "\n")
     return owner_address
 
         
@@ -34,6 +34,12 @@ def get_private_key_from_args(args):
         print(Fore.RED + str(e) + Fore.RESET)
         exit()
     return private_key
+
+def get_signer_from_args(args):
+    owner_address = get_address_from_args(args)
+    private_key = get_private_key_from_args(args)
+    return Signer(owner_address, private_key = private_key)
+
 
 if (__name__ == "__main__"):
 
@@ -60,15 +66,8 @@ if (__name__ == "__main__"):
         """ + Fore.RESET)
         exit()
            
-    # Create transacter from address and private_key (the latter only if we need to sign tx)
-    # The transacter will handle the signing and executing of transactions
-    owner_address = get_address_from_args(args)
-    if args.command in ["show", "list"]:
-        # Don't need the private key for that
-        transacter = Transacter(owner_address, private_key = None, txmode = args.txmode)
-    else:
-        private_key = get_private_key_from_args(args)
-        transacter = Transacter(owner_address, private_key = private_key, txmode = args.txmode)
+    # Create transacter (to handle calls to the blackchain) and signer (to sign tx)
+    transacter = Transacter(txmode = args.txmode)
 
     # Check gas price
     gas_price_gwei = transacter.get_gas_price() * 1e9

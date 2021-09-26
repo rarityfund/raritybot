@@ -44,7 +44,7 @@ def list_tokens_from_contract(owner_address, contract_address, limit = 0):
     return token_ids
 
 
-def list_summoners(address, transacter, verbose = True, limit = 0):
+def list_summoners(address, transacter, set_signer = None, verbose = True, limit = 0):
     '''List summoners owned by the given address'''
     
     print("Scanning for summoners, this may take a while...")
@@ -56,7 +56,7 @@ def list_summoners(address, transacter, verbose = True, limit = 0):
     # Finally, we instantiate a Summoner for each ID
     summoners = []
     for id in token_ids:
-        summoner = Summoner(id, transacter)
+        summoner = Summoner(id, transacter, signer = set_signer)
         summoners.append(summoner)
 
     # Print data if verbose
