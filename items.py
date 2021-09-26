@@ -1,8 +1,10 @@
-
-from logging import critical
-from summoner import InvalidAddressError
+from colorama.ansi import Fore
+from tabulate import tabulate
 from web3.main import Web3
+
+from summoner import InvalidAddressError
 from transacter import Transacter
+
 
 class InvalidItemError(Exception):
     pass
@@ -51,7 +53,6 @@ class Codex:
         except KeyError:
             raise InvalidItemError("Invalid codex name")
         return [Item.create(codex_name, id, self) for id in range(1, size+1)]
-
         
 class Item:
 
@@ -81,57 +82,106 @@ class Item:
     def __str__(self):
         return f"{self.name} ({self.base_type} #{self.item_id})"
 
+    @staticmethod
+    def print_items(items):
+        details = [item.get_details() for item in items]
+        tbl = tabulate(details, headers = "keys", tablefmt = "fancy")
+        print(Fore.WHITE + tbl)
+
+
 class Good(Item):
 
+    base_type = "good"
+    codex_name = "goods"
+
     def __init__(self, item_data):
-        self.base_type = "good"
         self.parse_item_data(item_data)
 
     def parse_item_data(self, item_data):
         (item_id, cost, weight, name, description) = item_data
         self.item_id = item_id
-        self.cost = cost
+        self.cost = cost / 1e18
         self.weight = weight
         self.name = name
         self.desciption = description
 
+    def get_details(self):
+        return {
+            "base_type": self.base_type,
+            "item_id": self.item_id,
+            "name": self.name,
+            "cost": self.cost,
+            "weight": self.weight
+        }
+
 class Weapon(Item):
 
+    base_type = "weapon"
+    codex_name = "weapons"
+
     def __init__(self, item_data):
-        self.base_type = "weapon"
         self.parse_item_data(item_data)
     
     def parse_item_data(self, item_data):
         (item_id, cost, proficiency, encumbrance, damage_type, weight, damage, critical, critical_modifier, range_increment, name, description) = item_data
         self.item_id = item_id
-        self.cost = cost,
+        self.cost = cost / 1e18
+        self.weight = weight
         self.proficiency = proficiency
         self.encumbrance = encumbrance
-        self.damage_type = damage_type
-        self.weight = weight
         self.damage = damage
-        self.critical = critical_modifier,
-        self.range_increment = range_increment,
+        self.damage_type = damage_type
+        self.critical = critical
+        self.critical_modifier = critical_modifier
+        self.range_increment = range_increment
         self.name = name
         self.description = description
 
+    def get_details(self):
+        return {
+            "base_type": self.base_type,
+            "item_id": self.item_id,
+            "name": self.name,
+            "cost": self.cost,
+            "weight (encombrance)": f"{self.weight} ({self.encumbrance})",
+            "proficiency": self.proficiency,
+            "damage (type)": f"{self.damage} ({self.damage_type})",
+            "critical (mod)": f"{self.critical} ({self.critical_modifier})",
+            "range": self.range_increment
+        }
 
 class Armor(Item):
 
+    base_type = "armor"
+    codex_name = "armors"
+
     def __init__(self, item_data):
-        self.base_type = "armor"
         self.parse_item_data(item_data)
 
     
     def parse_item_data(self, item_data):
         (item_id, cost, proficiency, weight, armor_bonus, max_dex_bonus, penalty, spell_failure, name, description) = item_data
         self.item_id   = item_id
-        self.cost = cost,
+        self.cost = cost / 1e18
         self.proficiency = proficiency
         self.weight = weight
-        self.armor_bonus = armor_bonus,
+        self.armor_bonus = armor_bonus
         self.max_dex_bonus = max_dex_bonus
         self.penalty = penalty
         self.spell_failure = spell_failure
         self.name = name
         self.description = description
+
+    def get_details(self):
+        return {
+            "base_type": self.base_type,
+            "item_id": self.item_id,
+            "name": self.name,
+            "cost": self.cost,
+            "weight": self.weight,
+            "proficiency": self.proficiency,
+            "armor_bonus": self.armor_bonus,
+            "max_dex_bonus": self.max_dex_bonus,
+            "penalty": self.penalty,
+            "spell_failure": self.spell_failure
+        }

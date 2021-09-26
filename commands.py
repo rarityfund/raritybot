@@ -1,4 +1,4 @@
-from crafting import Codex
+from items import Codex, Item
 from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
@@ -11,30 +11,27 @@ def command_show(args, transacter):
         # Listing summoners
         owner_address = get_address_from_args(args)
         list_summoners(owner_address, transacter, verbose = True, limit = args.limit)
+
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
+    
     elif args.what == "items":
         # Listing crafted items
         owner_address = get_address_from_args(args)
         list_items(owner_address, verbose = True, limit = args.limit)
+    
     elif args.what == "craftable":
         codex = Codex()
         
         print("\n --- GOODS ---")
-        goods = codex.get_items("goods")
-        for g in goods:
-            print(g)
-        
-        print("\n --- WEAPONS ---")
-        weapons = codex.get_items("weapons")
-        for w in weapons:
-            print(w)
+        Item.print_items(codex.get_items("goods"))
 
+        print("\n --- WEAPONS ---")
+        Item.print_items(codex.get_items("weapons"))
+        
         print("\n --- ARMORS ---")
-        armors = codex.get_items("armors")
-        for a in armors:
-            print(a)
+        Item.print_items(codex.get_items("armors"))
         
 
 def command_summon(args, transacter):
