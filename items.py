@@ -110,6 +110,7 @@ class Item:
 class Good(Item):
 
     base_type = "goods"
+    DC = 20
 
     def __init__(self, item_data):
         self.parse_item_data(item_data)
@@ -127,6 +128,7 @@ class Good(Item):
             "base_type": self.base_type,
             "item_id": self.item_id,
             "name": self.name,
+            "Craft DC": self.DC,
             "cost": self.cost,
             "weight": self.weight
         }
@@ -139,6 +141,12 @@ class Weapon(Item):
         1: "Simple",
         2: "Martial",
         3: "Exotic"
+    }
+
+    DC_by_proficiency = {
+        1: 20,
+        2: 25,
+        3: 30
     }
 
     encumbrance_by_id = {
@@ -172,12 +180,14 @@ class Weapon(Item):
         self.range_increment = range_increment
         self.name = name
         self.description = description
+        self.DC = self.DC_by_proficiency[self.proficiency]
 
     def get_details(self):
         return {
             "base_type": self.base_type,
             "item_id": self.item_id,
             "name": self.name,
+            "Craft DC": self.DC,
             "cost": self.cost,
             "weight": self.weight,
             "encumbrance": self.encumbrance_by_id[self.encumbrance],
@@ -214,12 +224,14 @@ class Armor(Item):
         self.spell_failure = spell_failure
         self.name = name
         self.description = description
+        self.DC = 20 + armor_bonus
 
     def get_details(self):
         return {
             "base_type": self.base_type,
             "item_id": self.item_id,
             "name": self.name,
+            "Craft DC": self.DC,
             "cost": self.cost,
             "weight": self.weight,
             "proficiency": self.proficiency_by_id[self.proficiency],
