@@ -38,6 +38,7 @@ class Summoner:
         self.token_id = id
         self.update_summoner_info()
         self.update_gold_balance()
+        self.update_attributes()
 
     def __str__(self):
         return "A " + self.class_name + " (" + str(self.token_id) + ")"
@@ -53,6 +54,14 @@ class Summoner:
             "SummonerId": self.token_id,
             "Class": self.class_name,
             "Level": "lvl " + str(self.level),
+            
+            "STR": self.attributes["str"],
+            "DEX": self.attributes["dex"],
+            "CON": self.attributes["const"],
+            "INT": self.attributes["int"],
+            "WIS": self.attributes["wis"],
+            "CHA": self.attributes["cha"],
+            
             "XP": xp_str,
             "Gold": round(self.gold),
             "Craft Mat(I)": round(self.get_balance_craft1()),
@@ -260,3 +269,27 @@ class Summoner:
         skills = [score for i,score in enumerate(skills_vec) if class_skills[i]]
         skill_dict = {skill_names[i]: score for i, score in enumerate(skills)}
         return skill_dict
+
+    def get_skill(self, skill_name):
+        return self.get_skills().get(skill_name, 0)
+
+    def get_craft_level(self):
+        """Three times faster than calling get_skill('Craft')"""
+        skills_vec = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        return skills_vec[5]
+
+    # ATTRIBUTES
+    def get_attributes(self):
+        (strength, dexterity, constitution, intelligence, wisdom, charisma) = \
+            self.contracts["attributes"].functions.ability_scores(self.token_id).call()
+        return {
+            "str": strength,
+            "dex": dexterity,
+            "const": constitution,
+            "int": intelligence,
+            "wis": wisdom,
+            "cha": charisma
+        }
+
+    def update_attributes(self):
+        self.attributes = self.get_attributes()
