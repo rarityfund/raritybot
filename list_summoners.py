@@ -2,8 +2,9 @@ from colorama import Fore
 import requests
 from transacter import Transacter
 
-# Class Summoner is defined in summoner.py
+# Local imports
 from summoner import Summoner
+from items import Codex, Item
 
 def list_tokens_from_contract(owner_address, contract_address, limit = 0):
     """List tokens by listing ERC721 transactions"""
@@ -64,9 +65,13 @@ def list_items(address, limit = 0):
     '''List items owned by the given address'''
     
     print("Scanning for items, this may take a while...")
-    token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["crafting1"], limit = limit)
-
+    token_ids = list_tokens_from_contract(address, contract_address = Codex.contract_addresses["crafting"], limit = limit)
     print(Fore.GREEN + "Found " + str(len(token_ids)) + " items!\n")
 
-    return token_ids
+
+    print(Fore.WHITE + "Fetching item details, this may take a while...\n")
+    codex = Codex()
+    items = [Item.create_from_token(token_id, codex) for token_id in token_ids]
+
+    return items
 

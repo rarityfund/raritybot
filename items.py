@@ -11,10 +11,11 @@ class InvalidItemError(Exception):
 
 class Codex:
 
-    codex_addresses = {
+    contract_addresses = {
         "goods": "0x0C5C1CC0A7AE65FE372fbb08FF16578De4b980f3",
         "armors": "0xf5114A952Aca3e9055a52a87938efefc8BB7878C",
-        "weapons": "0xeE1a2EA55945223404d73C0BbE57f540BBAAD0D8"
+        "weapons": "0xeE1a2EA55945223404d73C0BbE57f540BBAAD0D8",
+        "crafting": "0xf41270836dF4Db1D28F7fd0935270e3A603e78cC"
     }
 
     codex_sizes = {
@@ -24,20 +25,20 @@ class Codex:
     }
 
     # Contracts adress checksums
-    codex_checksums = {k: Web3.toChecksumAddress(v) for k, v in codex_addresses.items()}
+    contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
     def __init__(self):
         self.w3 = Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
-        self.codex_contracts = {cname: Transacter.rate_limit(self.get_codex_contract(cname)) for cname in self.codex_addresses.keys()}
+        self.contracts = {cname: Transacter.rate_limit(self.get_codex_contract(cname)) for cname in self.contract_addresses.keys()}
 
     def get_codex_contract(self, codex_name):
         '''Get contract or raise a KeyError if contract isn't listed'''
-        return self.w3.eth.contract(address = self.codex_checksums[codex_name], 
-                            abi = Transacter.get_abi(self.codex_addresses[codex_name]))
+        return self.w3.eth.contract(address = self.contract_checksums[codex_name], 
+                            abi = Transacter.get_abi(self.contract_addresses[codex_name]))
 
     def get_item_data(self, codex_name, id):
         try:
-            contract = self.codex_contracts[codex_name]
+            contract = self.contracts[codex_name]
             size = self.codex_sizes[codex_name]
         except KeyError:
             raise InvalidItemError("Invalid codex name")
@@ -48,36 +49,38 @@ class Codex:
 
     def get_items(self, codex_name):
         try:
-            contract = self.codex_contracts[codex_name]
+            contract = self.contracts[codex_name]
             size = self.codex_sizes[codex_name]
         except KeyError:
             raise InvalidItemError("Invalid codex name")
-        return [Item.create(codex_name, id, self) for id in range(1, size+1)]
+        return [Item.create_from_data(codex_name, id, self) for id in range(1, size+1)]
         
 class Item:
 
-    base_types = {
-        "1": "goods",
-        "2": "armors",
-        "3": "weapons"
+    base_type_from_id = {
+        1: "goods",
+        2: "armors",
+        3: "weapons"
     }
 
+    @classmethod
+    def create_from_data(cls, base_type, item_id, codex):
+        class_mapping = {
+            "goods": Good,
+            "weapons": Weapon,
+            "armors": Armor
+        }
+        item_data = codex.get_item_data(base_type, item_id)
+        item_class = class_mapping[base_type]
+        return item_class(item_data)
 
-    def create(base_type, item_id, codex):
-        if base_type in ["good", "goods"]:
-            item_data = codex.get_item_data("goods", item_id)
-            return Good(item_data)
-        elif base_type in ["armor", "armors"]:
-            item_data = codex.get_item_data("armors", item_id)
-            return Armor(item_data)
-        elif base_type in ["weapon", "weapons"]:
-            item_data = codex.get_item_data("weapons", item_id)
-            return Weapon(item_data)
-        else:
-            raise InvalidItemError("Invalid base_type")
+    @classmethod
+    def create_from_token(cls, token_id, codex):
+        (base_type, item_type, crafted, crafter) = codex.contracts["crafting"].functions.items(token_id).call()
+        return Item.create_from_data(cls.base_type_from_id[base_type], item_id = item_type, codex = codex)
 
     def __init__(self):
-        raise InvalidItemError("Items must be instantiated with Item.create() or Good() / Armor() / Weapon()")
+        raise InvalidItemError("Items must be instantiated with Item.create_from_data or Item.create_from_token")
 
     def __str__(self):
         return f"{self.name} ({self.base_type} #{self.item_id})"
@@ -91,8 +94,7 @@ class Item:
 
 class Good(Item):
 
-    base_type = "good"
-    codex_name = "goods"
+    base_type = "goods"
 
     def __init__(self, item_data):
         self.parse_item_data(item_data)
@@ -116,8 +118,7 @@ class Good(Item):
 
 class Weapon(Item):
 
-    base_type = "weapon"
-    codex_name = "weapons"
+    base_type = "weapons"
 
     proficiency_by_id = {
         1: "Simple",
@@ -167,14 +168,13 @@ class Weapon(Item):
             "encumbrance": self.encumbrance_by_id[self.encumbrance],
             "proficiency": self.proficiency_by_id[self.proficiency],
             "damage (type)": f"{self.damage} ({self.damage_type_by_id[self.damage_type]})",
-            "critical (crit mod)": str(self.critical) + f"({self.critical_modifier})" if self.critical_modifier else '',
+            "critical (crit mod)": str(self.critical) + (f" ({self.critical_modifier})" if self.critical_modifier else ''),
             "range_increment": self.range_increment
         }
 
 class Armor(Item):
 
-    base_type = "armor"
-    codex_name = "armors"
+    base_type = "armors"
 
     proficiency_by_id = {
         1: "Light",

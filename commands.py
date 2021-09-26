@@ -20,7 +20,8 @@ def command_show(args, transacter):
     elif args.what == "items":
         # Listing crafted items
         owner_address = get_address_from_args(args)
-        list_items(owner_address, limit = args.limit)
+        items = list_items(owner_address, limit = args.limit)
+        Item.print_items(items)
     
     elif args.what == "craftable":
         codex = Codex()
