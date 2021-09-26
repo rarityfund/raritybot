@@ -129,6 +129,9 @@ class Summoner:
             if tx_status["status"] == "success":
                 print("The summoner came back with success from his adventure!")
                 self.xp += 250
+            elif tx_status["status"] == "pending":
+                # Assume success and update xp (so that fast_check_level_up() works)
+                self.xp += 250
 
 
     ### LEVEL UP ----------------------------
