@@ -1,4 +1,6 @@
 from colorama import Fore
+from web3.main import Web3
+from tabulate import tabulate
 
 class InvalidSummonerError(Exception):
     """Used to indicate an invalid summoner is handled"""
@@ -6,6 +8,10 @@ class InvalidSummonerError(Exception):
 
 class InvalidAmountError(Exception):
     """Used to indicate invalid amounts during transfers"""
+    pass
+
+class InvalidAddressError(Exception):
+    """Used to indicate invalid addresses"""
     pass
 
 class Summoner:
@@ -24,16 +30,21 @@ class Summoner:
                 "Sorcerer",
                 "Wizard"]
 
-    def __init__(self, id, transacter):
+    def __init__(self, id, transacter, signer = None):
         # What we need to transact
         self.transacter = transacter
+        self.signer = signer
         self.contracts = transacter.contracts
         self.token_id = id
         self.update_summoner_info()
         self.update_gold_balance()
+        self.update_attributes()
 
     def __str__(self):
         return "A " + self.class_name + " (" + str(self.token_id) + ")"
+
+    def set_signer(self, signer):
+        self.signer = signer
 
     def get_details(self):
         """Get a dict full of details about the summoner.
@@ -43,6 +54,14 @@ class Summoner:
             "SummonerId": self.token_id,
             "Class": self.class_name,
             "Level": "lvl " + str(self.level),
+            
+            "STR": self.attributes["str"],
+            "DEX": self.attributes["dex"],
+            "CON": self.attributes["const"],
+            "INT": self.attributes["int"],
+            "WIS": self.attributes["wis"],
+            "CHA": self.attributes["cha"],
+            
             "XP": xp_str,
             "Gold": round(self.gold),
             "Craft Mat(I)": round(self.get_balance_craft1()),
@@ -50,7 +69,13 @@ class Summoner:
             "Next Cellar": self.seconds_to_hms(self.time_to_next_cellar()),
             "Cellar Loot": round(self.expected_cellar_loot())
         }
-                
+
+    @staticmethod
+    def print_summoners(summoners):
+        details = [s.get_details() for s in summoners]
+        tbl = tabulate(details, headers = "keys", tablefmt = "pretty")
+        print(Fore.WHITE + tbl)
+  
     @staticmethod
     def seconds_to_hms(secs):
         if (secs <= 0):
@@ -92,7 +117,7 @@ class Summoner:
         if self.check_claim_gold():
             print(Fore.WHITE + str(self) + " is claiming gold")
             claim_gold_fun = self.contracts["gold"].functions.claim(self.token_id)
-            tx_status = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000)
+            tx_status = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000, signer = self.signer)
             if tx_status["status"] == "success":
                 print("The summoner claimed gold with success !")
                 self.update_gold_balance()
@@ -120,9 +145,12 @@ class Summoner:
         if self.check_adventure():
             print(Fore.WHITE + str(self) + " has gone on an adventure!")
             adventure_fun = self.contracts["summoner"].functions.adventure(self.token_id)
-            tx_status = self.transacter.sign_and_execute(adventure_fun, gas = 70000)
+            tx_status = self.transacter.sign_and_execute(adventure_fun, gas = 70000, signer = self.signer)
             if tx_status["status"] == "success":
                 print("The summoner came back with success from his adventure!")
+                self.xp += 250
+            elif tx_status["status"] == "pending":
+                # Assume success and update xp (so that fast_check_level_up() works)
                 self.xp += 250
 
 
@@ -144,7 +172,7 @@ class Summoner:
         if self.fast_check_level_up() and self.check_level_up():
             print(Fore.WHITE + str(self) + " is trying to pass level " + str(self.level + 1) + "!")
             levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
-            tx_status = self.transacter.sign_and_execute(levelup_fun, gas = 70000)
+            tx_status = self.transacter.sign_and_execute(levelup_fun, gas = 70000, signer = self.signer)
             if tx_status["status"] == "success":
                 print(Fore.YELLOW + "Level passed!")
                 self.level += 1
@@ -153,12 +181,12 @@ class Summoner:
     ### CELLAR (CRAFT1) -------------------------------------------
 
     def time_to_next_cellar(self):
-        next_time_available = self.contracts["cellar"].functions.adventurers_log(self.token_id).call()
+        next_time_available = self.contracts["craft1"].functions.adventurers_log(self.token_id).call()
         current_time = self.transacter.timestamp
         return next_time_available - current_time
 
     def expected_cellar_loot(self):
-        return int(self.contracts["cellar"].functions.scout(self.token_id).call())
+        return int(self.contracts["craft1"].functions.scout(self.token_id).call())
 
     def check_go_cellar(self):
         return self.time_to_next_cellar() <= 0 and self.expected_cellar_loot() > 0
@@ -166,8 +194,8 @@ class Summoner:
     def go_cellar(self):
         if self.check_go_cellar():
             print(Fore.WHITE + str(self) + " is going to The Cellar")
-            cellar_fun = self.contracts["cellar"].functions.adventure(self.token_id)
-            tx_status = self.transacter.sign_and_execute(cellar_fun, gas = 120000)
+            cellar_fun = self.contracts["craft1"].functions.adventure(self.token_id)
+            tx_status = self.transacter.sign_and_execute(cellar_fun, gas = 120000, signer = self.signer)
             if tx_status["status"] == "success":
                 print("The summoner came back from The Cellar with success !")
 
@@ -215,4 +243,53 @@ class Summoner:
             return None 
         # Do the transfer
         transfer_fun = contract.functions.transfer(self.token_id, to_id, amount)
-        return self.transacter.sign_and_execute(transfer_fun, gas = 70000)
+        return self.transacter.sign_and_execute(transfer_fun, gas = 70000, signer = self.signer)
+
+    def transfer_to_new_owner(self, new_owner_address):
+        """Transfer the summoner to a new owner"""
+        if not new_owner_address.startswith("0x") or len(new_owner_address) != 42:
+            raise InvalidAddressError("Invalid address: " + str(new_owner_address))
+        if new_owner_address.lower() == self.signer.address.lower():
+            raise InvalidAddressError("Invalid address: summoner already belongs to " + str(new_owner_address))
+        
+        print("Sending " + str(self) + " to " + str(new_owner_address))
+        old_address_checksum = Web3.toChecksumAddress(self.signer.address)
+        new_address_checksum = Web3.toChecksumAddress(new_owner_address)
+
+        transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(old_address_checksum, new_address_checksum, self.token_id)
+        return self.transacter.sign_and_execute(transfer_fun, gas = 70000, signer = self.signer)
+
+    # SKILLS
+    def get_skills(self):
+        """Dictionary of skill names to skill score"""
+        skills_vec = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        class_skills = self.contracts["skills"].functions.class_skills(self.class_id).call()
+        skill_names = self.contracts["skills"].functions.class_skills_by_name(self.class_id).call()
+
+        skills = [score for i,score in enumerate(skills_vec) if class_skills[i]]
+        skill_dict = {skill_names[i]: score for i, score in enumerate(skills)}
+        return skill_dict
+
+    def get_skill(self, skill_name):
+        return self.get_skills().get(skill_name, 0)
+
+    def get_craft_level(self):
+        """Three times faster than calling get_skill('Craft')"""
+        skills_vec = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        return skills_vec[5]
+
+    # ATTRIBUTES
+    def get_attributes(self):
+        (strength, dexterity, constitution, intelligence, wisdom, charisma) = \
+            self.contracts["attributes"].functions.ability_scores(self.token_id).call()
+        return {
+            "str": strength,
+            "dex": dexterity,
+            "const": constitution,
+            "int": intelligence,
+            "wis": wisdom,
+            "cha": charisma
+        }
+
+    def update_attributes(self):
+        self.attributes = self.get_attributes()

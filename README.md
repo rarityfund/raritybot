@@ -1,4 +1,4 @@
-# Rarity bot v1.3.1
+# Rarity bot v1.3.2
 
 ___________________________________________________
 
@@ -65,9 +65,11 @@ You're supposed to run this script once a day but the script won't take any acti
 Beyond "run", the bot can also perform other commands:
 
 - "run" to run actions (by default, adenture, level up, etc). The actions are configurable with `--actions`
-- "show" to list the summoners (with `show summoners`), show gas price (with `show gas`), etc
+- "show" to list the summoners (with `show summoners`), show gas price (with `show gas`), etc. See `show --help` for all options.
 - "summon" to create new summoners of a given class takes optional arguments `-n` (to create more than one) and `--attributes` to set their attributes.
 - "transfer" or "transfer-all" to transfer gold or crafting material across summoners.
+
+More commands are being added regularly, check out `python3 rarity.py --help` for an up-to-date list.
 
 For more details about those commands, please refer to the manual which you can get with `python3 rarity.py [command] --help`:
 

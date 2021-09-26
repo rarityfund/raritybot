@@ -19,7 +19,9 @@ def create_parser():
                         "single" to send them one by one and wait for the receipt each time.
                         "batch" to send tx in batches and wait less often.''',
                         default = "single", choices = ["single", "batch"])
-
+    config_group.add_argument('-g', '--maxgasprice', help='''Optional max gas price (integer in gwei) you're willing to pay. 
+    Abort if gas price is superior. Gas price is typically between 100 and 500 gwei.''',
+                        default = 10000, type = int)
 
     # This is the top level parser to which we'll add subparsers
     parser = argparse.ArgumentParser(description='Manage your rarity summoners')
@@ -33,11 +35,15 @@ def create_parser():
                             "Default location: " + DEFAULT_KEY_FILE,
                             default = DEFAULT_KEY_FILE)
     
-     # Command LIST takes argument 'what':
+     # Command SHOW (alias LIST) takes argument 'what':
+    show_options = ["summoners", "gas", "items", "craftable", "crafting-proba"]
     parser_list = subparsers.add_parser("show", aliases = ["list"], parents = [shared_parser],
                         help = "Show/list a variety of things, like gas price or summoners.")
     parser_list.add_argument("what", help = "What to show. By default, list summoners.", nargs = '?',
-                        choices = ["summoners", "gas", "items"], default = "summoners")
+                        choices = show_options, default = "summoners")
+    parser_list.add_argument("-n", "--limit", help = "Limit the number of tokens shown. Optional integer.",
+                        default = 0, type = int)
+    
 
     # Command RUN takes argument --actions:
     parser_run = subparsers.add_parser("run", parents=[shared_parser],
@@ -103,6 +109,16 @@ def create_parser():
                         default = "")
     parser_transfer_all.add_argument('--force',  help='''Force transfer to proceed. 
                         Needed to transfer assets to a summoner not owned by this address.''',
+                        action = "store_true")
+
+    # Command SEND-SUMMONER: almost the same as TRANSFER
+    parser_send_summoner = subparsers.add_parser("send-summoner", parents=[shared_parser],
+                        help = "Send summoners to another address. Be careful.")
+    parser_send_summoner.add_argument('who', help='Who to transfer. Either a summoner ID or "all" to send everyone.')
+    parser_send_summoner.add_argument('--to', dest = "to_address", required=True,
+                        help='Destination address of new owner, starting with "0x"',
+                        default = "")
+    parser_send_summoner.add_argument('--force',  help='''Force transfer to proceed. Needed when transferring ALL summoners.''',
                         action = "store_true")
 
     return parser

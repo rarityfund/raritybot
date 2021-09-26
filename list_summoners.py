@@ -1,12 +1,12 @@
 from colorama import Fore
-from tabulate import tabulate
 import requests
 from transacter import Transacter
 
-# Class Summoner is defined in summoner.py
+# Local imports
 from summoner import Summoner
+from items import ItemCodex, Item
 
-def list_tokens_from_contract(owner_address, contract_address):
+def list_tokens_from_contract(owner_address, contract_address, limit = 0):
     """List tokens by listing ERC721 transactions"""
 
     owner_address = owner_address.lower()
@@ -36,14 +36,19 @@ def list_tokens_from_contract(owner_address, contract_address):
 
     # Tokens we still own should have a count of 1 (we could have sent them and gotten them back)
     # We should only ever have counts of -1 and +1
-    return [token for token in token_counts if token_counts[token] > 0]
+    token_ids =  [token for token in token_counts if token_counts[token] > 0]
+    if limit:
+        print("Limiting results to " + str(limit))
+        token_ids = token_ids[0:limit]
+
+    return token_ids
 
 
-def list_summoners(address, transacter, verbose = True):
+def list_summoners(address, transacter, set_signer = None, limit = 0):
     '''List summoners owned by the given address'''
     
     print("Scanning for summoners, this may take a while...")
-    token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["summoner"])
+    token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["summoner"], limit = limit)
 
     print(Fore.GREEN + "Found " + str(len(token_ids)) + " summoners!\n")
     print(Fore.WHITE + "Fetching summoner info, this may take a while...\n")
@@ -51,29 +56,22 @@ def list_summoners(address, transacter, verbose = True):
     # Finally, we instantiate a Summoner for each ID
     summoners = []
     for id in token_ids:
-        summoner = Summoner(id, transacter)
+        summoner = Summoner(id, transacter, signer = set_signer)
         summoners.append(summoner)
-
-    # Print data if verbose
-    if verbose:
-        summoner_data = [summoner.get_details() for summoner in summoners]
-        tbl = tabulate(summoner_data, headers = "keys", tablefmt = "fancy")
-        print(Fore.WHITE + tbl)
 
     return summoners
 
-def list_items(address, verbose = True):
+def list_items(address, limit = 0):
     '''List items owned by the given address'''
     
     print("Scanning for items, this may take a while...")
-    token_ids = list_tokens_from_contract(address, contract_address = Transacter.contract_addresses["crafting1"])
-
+    token_ids = list_tokens_from_contract(address, contract_address = ItemCodex.contract_addresses["crafting"], limit = limit)
     print(Fore.GREEN + "Found " + str(len(token_ids)) + " items!\n")
 
-    # Print data if verbose
-    if token_ids and verbose:
-        for id in token_ids:
-            print(Fore.WHITE + "Item " + str(id))
 
-    return token_ids
+    print(Fore.WHITE + "Fetching item details, this may take a while...\n")
+    codex = ItemCodex()
+    items = [Item.create_from_token(token_id, codex) for token_id in token_ids]
+
+    return items
 

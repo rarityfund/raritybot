@@ -1,4 +1,7 @@
-from summoner import InvalidAmountError, InvalidSummonerError, Summoner
+from crafting import CraftingEngine
+from items import ItemCodex, Item
+from rarity import get_address_from_args, get_signer_from_args
+from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
 from summoning import SummoningEngine
 from colorama import Fore
@@ -7,18 +10,35 @@ import key
 def command_show(args, transacter):
     if args.what == "summoners":
         # Listing summoners
-        list_summoners(transacter.address, transacter, verbose = True)
+        owner_address = get_address_from_args(args)
+        summoners = list_summoners(owner_address, transacter, limit = args.limit)
+        Summoner.print_summoners(summoners)
+
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
+    
     elif args.what == "items":
         # Listing crafted items
-        list_items(transacter.address, verbose = True)
-        
+        owner_address = get_address_from_args(args)
+        items = list_items(owner_address, limit = args.limit)
+        Item.print_items(items)
+    
+    elif args.what == "craftable":
+        codex = ItemCodex()
+        Item.print_items(codex.get_items("goods"))
+        Item.print_items(codex.get_items("weapons"))
+        Item.print_items(codex.get_items("armors"))
+
+    elif args.what == "crafting-proba":
+        item_dc = args.limit if args.limit else 20
+        print("Probability table when crafting items with DC=" + str(item_dc))
+        CraftingEngine.print_proba_table(item_dc = item_dc)
 
 def command_summon(args, transacter):
     # Summoning new summoners
-    summoning_engine = SummoningEngine(transacter)
+    signer = get_signer_from_args(args)
+    summoning_engine = SummoningEngine(transacter, signer = signer)
 
     # Parse attributes if provided
     summoning_attributes = None
@@ -26,7 +46,7 @@ def command_summon(args, transacter):
         try:
             summoning_attributes = summoning_engine.parse_attributes(args.attributes)
         except key.InvalidInputError as e:
-            print(Fore.RED + str(e))
+            print(Fore.RED + str(e) + Fore.RESET)
             exit()
 
     if not args.summoner_class:
@@ -44,10 +64,10 @@ def command_summon(args, transacter):
         for receipt in receipts:
             summon_details = summoning_engine.get_details_from_summon_receipt(receipt)
             if summon_details:
-                print(Summoner(summon_details["token_id"], transacter).get_details())
+                print(Summoner(summon_details["token_id"], transacter))
                 summoner_ids.append(summon_details["token_id"])
             else:
-                print("Could not get summon data - CANNOT ASSIGN ATTRIBUTES")
+                print(Fore.RED + "Could not get summon data - CANNOT ASSIGN ATTRIBUTES")
         # Now assigning attributes if provided
         if summoning_attributes:
             for summoner_id in summoner_ids:
@@ -66,15 +86,19 @@ def command_summon(args, transacter):
                 ("s" if len(summoner_ids) > 1 else "") + ":")
         
         for token_id in summoner_ids:
-            print(Summoner(token_id, transacter).get_details())
+            print(Summoner(token_id, transacter))
 
 def command_run(args, transacter):
-    print_list = "list" in args.actions
-    summoners = list_summoners(transacter.address, transacter, verbose = print_list)
-    print("\n")
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
+
+    if "list" in args.actions:
+        Summoner.print_summoners(summoners)
+        print("\n")
 
     if not summoners:
-        print("This address doesn't contains any rarities, bot is exiting...")
+        print("This address doesn't contains any rarities, bot is exiting..." + Fore.RESET)
         exit()
 
     print("Looking for things to do ...")
@@ -111,21 +135,22 @@ def command_transfer(args, transacter, transfer_all = False):
     if not args.from_id:
         raise InvalidSummonerError("Must specify a sender with `--from`")
     
-    summoners = list_summoners(transacter.address, transacter, verbose = False)
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
     summoner_ids = [str(round(s.token_id)) for s in summoners]
     
     # Set sender(s)
     if args.from_id == "all":
         senders = summoners
     elif args.from_id not in summoner_ids:
-        print(summoner_ids)
         raise InvalidSummonerError("Sender (" + args.from_id + ") is not owned by this address.")
     else:
         try:
             sender_id = int(args.from_id)
         except ValueError:
             raise InvalidSummonerError("Invalid sender ID")
-        senders = [Summoner(sender_id, transacter)]
+        senders = [Summoner(sender_id, transacter, signer = signer)]
 
     # Check recipient
     if args.to_id not in summoner_ids and not args.force:
@@ -149,4 +174,43 @@ def command_transfer(args, transacter, transfer_all = False):
             raise InvalidAmountError("Invalid token: cannot transfer")
 
     transacter.wait_for_pending_transations()
+
+
+def command_send_summoner(args, transacter):
+    if not args.who:
+        raise InvalidSummonerError("Must specify who to send.")
+    
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    summoners = list_summoners(owner_address, transacter, set_signer = signer)
+    summoner_ids = [str(round(s.token_id)) for s in summoners]
+    
+    # Set sender(s)
+    if args.who == "all":
+        if not args.force:
+            print("Warning: you are about to send ALL your summoners! Use `--force` to force the transfer.")
+            return None
+        senders = summoners
+    elif args.who not in summoner_ids:
+        raise InvalidSummonerError("Summoner (" + args.who + ") is not owned by this address.")
+    else:
+        try:
+            sender_id = int(args.who)
+        except ValueError:
+            raise InvalidSummonerError("Invalid sender ID")
+        senders = [Summoner(sender_id, transacter, signer = signer)]
+
+    # Check recipient
+    if not args.to_address:
+        raise InvalidAddressError("Must provide an address with `--to`")
+    
+    # Do the transfer(s)
+    for sender in senders:
+        try:
+            sender.transfer_to_new_owner(args.to_address)
+        except InvalidAddressError as e:
+            print(e)
+
+    transacter.wait_for_pending_transations()
+
 
