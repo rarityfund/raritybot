@@ -9,7 +9,7 @@ from transacter import Transacter
 class InvalidItemError(Exception):
     pass
 
-class Codex:
+class ItemCodex:
 
     contract_addresses = {
         "goods": "0x0C5C1CC0A7AE65FE372fbb08FF16578De4b980f3",

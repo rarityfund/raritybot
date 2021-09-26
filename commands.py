@@ -1,4 +1,4 @@
-from items import Codex, Item
+from items import ItemCodex, Item
 from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
@@ -24,7 +24,7 @@ def command_show(args, transacter):
         Item.print_items(items)
     
     elif args.what == "craftable":
-        codex = Codex()
+        codex = ItemCodex()
         Item.print_items(codex.get_items("goods"))
         Item.print_items(codex.get_items("weapons"))
         Item.print_items(codex.get_items("armors"))
