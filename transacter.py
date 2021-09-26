@@ -38,8 +38,6 @@ class Transacter:
         "gold": "0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2",
         "skills": "0x51C0B29A1d84611373BA301706c6B4b72283C80F",
         "craft1": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A",
-        "cellar": "0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A", # Same as craft1
-        "crafting1": "0xf41270836dF4Db1D28F7fd0935270e3A603e78cC",
         "feats": "0x4F51ee975c01b0D6B29754657d7b3cC182f20d8a"
     }
 

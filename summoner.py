@@ -172,12 +172,12 @@ class Summoner:
     ### CELLAR (CRAFT1) -------------------------------------------
 
     def time_to_next_cellar(self):
-        next_time_available = self.contracts["cellar"].functions.adventurers_log(self.token_id).call()
+        next_time_available = self.contracts["craft1"].functions.adventurers_log(self.token_id).call()
         current_time = self.transacter.timestamp
         return next_time_available - current_time
 
     def expected_cellar_loot(self):
-        return int(self.contracts["cellar"].functions.scout(self.token_id).call())
+        return int(self.contracts["craft1"].functions.scout(self.token_id).call())
 
     def check_go_cellar(self):
         return self.time_to_next_cellar() <= 0 and self.expected_cellar_loot() > 0
@@ -185,7 +185,7 @@ class Summoner:
     def go_cellar(self):
         if self.check_go_cellar():
             print(Fore.WHITE + str(self) + " is going to The Cellar")
-            cellar_fun = self.contracts["cellar"].functions.adventure(self.token_id)
+            cellar_fun = self.contracts["craft1"].functions.adventure(self.token_id)
             tx_status = self.transacter.sign_and_execute(cellar_fun, gas = 120000, signer = self.signer)
             if tx_status["status"] == "success":
                 print("The summoner came back from The Cellar with success !")
