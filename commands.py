@@ -1,3 +1,4 @@
+from crafting import CraftingEngine
 from items import ItemCodex, Item
 from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
@@ -28,7 +29,11 @@ def command_show(args, transacter):
         Item.print_items(codex.get_items("goods"))
         Item.print_items(codex.get_items("weapons"))
         Item.print_items(codex.get_items("armors"))
-        
+
+    elif args.what == "crafting-proba":
+        item_dc = args.limit if args.limit else 20
+        print("Probability table when crafting items with DC=" + str(item_dc))
+        CraftingEngine.print_proba_table(item_dc = item_dc)
 
 def command_summon(args, transacter):
     # Summoning new summoners
