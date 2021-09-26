@@ -42,13 +42,14 @@ class CraftingEngine:
             for craft_level in range(4, 8):
                 for craft_mats in range(0, 500, 10):
                     proba = CraftingEngine.check_craft_proba(craft_level, int_level, item_dc, craft_mats)
-                    data.append({
-                        "Item DC": item_dc,
-                        "Intelligence": int_level,
-                        "Craft Level": craft_level,
-                        "Crafting Material Spent": craft_mats,
-                        "Probability of Success": str(round(100 * proba, 2)) + "%"
-                    })
+                    if proba >= 0.7:
+                        data.append({
+                            "Item DC": item_dc,
+                            "Intelligence": int_level,
+                            "Craft Level": craft_level,
+                            "Crafting Material Spent": craft_mats,
+                            "Probability of Success": str(round(100 * proba, 2)) + "%"
+                        })
                     if proba == 1:
                         break
         return data

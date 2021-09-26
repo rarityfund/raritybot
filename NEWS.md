@@ -1,5 +1,20 @@
 # raritybot WIP (devel)
 
+- Start implementing crafting: new command `show crafting-proba -n DC` will show crafting probabilities for an item of a give DC (20 by default) for a range of INT and craft level. Crafting probabilities only depend on INT level, craft level, item DC and how much crafting mats you're willing to spend. Low-probability combinations (<70%) are not shown.
+
+- Add internal methods `Summoner.get_skills()` and `Summoner.get_attributes`. The summoner list now shows the attribute scores.
+
+- New commands `show craftable` to list craftable items (goods, armors and weapons). 
+  Also now printing more details of owned items with `show items`
+
+- New argument `-n` or `--limit` to limit the number of summoners or items being printed by `show summoners` (resp. `show items`).
+  For example, `python3 rarity.py show summoners -n 10` will fetch data for the first 10 summoners only, which can be much faster.
+
+- Better color management while printing
+
+- New config argument `--maxgasprice P` will abort all operations if the gas price is superior to P in gwei. 
+  Gas price fluctuates daily between 130 and 600 gwei as of September 2021 so `--maxgasprice 200` is recommended.
+
 - New command `send-summoner` to transfer summoners to another address. Can send one summoner (`send-summoner 1234 --to 0xa123434...`) or all of them (`send-summoner all --to 0xa1234... --force`). When sending all summoners, `--force` is required for safety.
 
 # raritybot 1.3.1 (master)
