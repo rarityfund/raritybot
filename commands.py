@@ -7,13 +7,13 @@ import key
 def command_show(args, transacter):
     if args.what == "summoners":
         # Listing summoners
-        list_summoners(transacter.address, transacter, verbose = True)
+        list_summoners(transacter.address, transacter, verbose = True, limit = args.limit)
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
     elif args.what == "items":
         # Listing crafted items
-        list_items(transacter.address, verbose = True)
+        list_items(transacter.address, verbose = True, limit = args.limit)
         
 
 def command_summon(args, transacter):

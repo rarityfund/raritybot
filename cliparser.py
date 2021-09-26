@@ -35,12 +35,13 @@ def create_parser():
                             "Default location: " + DEFAULT_KEY_FILE,
                             default = DEFAULT_KEY_FILE)
     
-     # Command LIST takes argument 'what':
+     # Command SHOW (alias LIST) takes argument 'what':
     parser_list = subparsers.add_parser("show", aliases = ["list"], parents = [shared_parser],
                         help = "Show/list a variety of things, like gas price or summoners.")
     parser_list.add_argument("what", help = "What to show. By default, list summoners.", nargs = '?',
                         choices = ["summoners", "gas", "items"], default = "summoners")
-
+    parser_list.add_argument("-n", "--limit", help = "Limit the number of tokens shown. Optional integer.",
+                        default = 0, type = int)
     # Command RUN takes argument --actions:
     parser_run = subparsers.add_parser("run", parents=[shared_parser],
                         help = "Run the bot to take automatic configurable actions.")
