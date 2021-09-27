@@ -1,3 +1,4 @@
+from items import InvalidItemError
 from colorama import Fore
 import os.path
 import argparse
@@ -12,7 +13,18 @@ from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerErr
 def print_intro():
     print('Welcome to Rarity bot v1.3.3')
 
+def check_keyfile(args):
+    # If keyfile doesn't exist, we exit
+    if not os.path.exists(args.keyfile):
+        print("""
+        No keyfile found. Specify it with `--keyfile path/to/keyfile.json` or save it as `privatekeyencrypted.json`.
+        You can import a new key (to create a new keyfile) with the `import-key` command:
+        `python3 rarity.py import-key`
+        """ + Fore.RESET)
+        exit()
+
 def get_address_from_args(args, verbose = True):
+    check_keyfile(args)
     try:
         owner_address = key.load_address(args.keyfile)
     except key.InvalidInputError as e:
@@ -24,6 +36,7 @@ def get_address_from_args(args, verbose = True):
 
         
 def get_private_key_from_args(args):
+    check_keyfile(args)
     try:
         if args.password != '':
             # If pwd was passed as arg, we use it
@@ -56,15 +69,6 @@ if (__name__ == "__main__"):
             key.import_new_privatekey(args.keyfile)
         except key.InvalidInputError as e:
             print(Fore.RED + str(e) + Fore.RESET)
-        exit()
-
-    # If keyfile doesn't exist, we exit
-    if not os.path.exists(args.keyfile):
-        print("""
-        No keyfile found. Specify it with `--keyfile path/to/keyfile.json` or save it as `privatekeyencrypted.json`.
-        You can import a new key (to create a new keyfile) with the `import-key` command:
-        `python3 rarity.py import-key`
-        """ + Fore.RESET)
         exit()
            
     # Create transacter (to handle calls to the blackchain) and signer (to sign tx)
@@ -104,7 +108,14 @@ if (__name__ == "__main__"):
         try:
             commands.command_send_summoner(args, transacter)
         except (InvalidAddressError, InvalidSummonerError) as e:
-            print(Fore.RED + e)
+            print(Fore.RED + str(e))
+
+    # CRAFT --------------
+    elif args.command == "craft":
+        try:
+            commands.command_craft(args, transacter)
+        except (InvalidItemError, InvalidAddressError, InvalidSummonerError) as e:
+            print(Fore.RED + str(e))
 
     else:
         print(Fore.RED + "Unrecognised command")    

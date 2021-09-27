@@ -50,6 +50,11 @@ class Summoner:
     def set_signer(self, signer):
         self.signer = signer
 
+    def sign_and_execute(self, w3fun, gas):
+        if not self.signer:
+            raise PermissionError("Cannot sign without a signer with a private key")
+        self.transacter.sign_and_execute(w3fun, gas, signer = self.signer)
+
     def update_summoner_info(self):
         """Update class, level and xp"""
         (xp, _, class_id, level) = self.contracts["summoner"].functions.summoner(self.token_id).call()
@@ -124,7 +129,7 @@ class Summoner:
         if self.check_claim_gold():
             print(Fore.WHITE + str(self) + " is claiming gold")
             claim_gold_fun = self.contracts["gold"].functions.claim(self.token_id)
-            tx_status = self.transacter.sign_and_execute(claim_gold_fun, gas = 120000, signer = self.signer)
+            tx_status = self.sign_and_execute(claim_gold_fun, gas = 120000)
             if tx_status["status"] == "success":
                 print("The summoner claimed gold with success !")
                 self.update_gold_balance()
@@ -152,7 +157,7 @@ class Summoner:
         if self.check_adventure():
             print(Fore.WHITE + str(self) + " has gone on an adventure!")
             adventure_fun = self.contracts["summoner"].functions.adventure(self.token_id)
-            tx_status = self.transacter.sign_and_execute(adventure_fun, gas = 70000, signer = self.signer)
+            tx_status = self.sign_and_execute(adventure_fun, gas = 70000)
             if tx_status["status"] == "success":
                 print("The summoner came back with success from his adventure!")
                 self.xp += 250
@@ -179,7 +184,7 @@ class Summoner:
         if self.fast_check_level_up() and self.check_level_up():
             print(Fore.WHITE + str(self) + " is trying to pass level " + str(self.level + 1) + "!")
             levelup_fun = self.contracts["summoner"].functions.level_up(self.token_id)
-            tx_status = self.transacter.sign_and_execute(levelup_fun, gas = 70000, signer = self.signer)
+            tx_status = self.sign_and_execute(levelup_fun, gas = 70000)
             if tx_status["status"] == "success":
                 print(Fore.YELLOW + "Level passed!")
                 self.level += 1
@@ -202,7 +207,7 @@ class Summoner:
         if self.check_go_cellar():
             print(Fore.WHITE + str(self) + " is going to The Cellar")
             cellar_fun = self.contracts["craft1"].functions.adventure(self.token_id)
-            tx_status = self.transacter.sign_and_execute(cellar_fun, gas = 120000, signer = self.signer)
+            tx_status = self.sign_and_execute(cellar_fun, gas = 120000)
             if tx_status["status"] == "success":
                 print("The summoner came back from The Cellar with success !")
 
@@ -250,21 +255,21 @@ class Summoner:
             return None 
         # Do the transfer
         transfer_fun = contract.functions.transfer(self.token_id, to_id, amount)
-        return self.transacter.sign_and_execute(transfer_fun, gas = 70000, signer = self.signer)
+        return self.sign_and_execute(transfer_fun, gas = 70000)
 
     def transfer_to_new_owner(self, new_owner_address):
         """Transfer the summoner to a new owner"""
         if not new_owner_address.startswith("0x") or len(new_owner_address) != 42:
             raise InvalidAddressError("Invalid address: " + str(new_owner_address))
-        if new_owner_address.lower() == self.signer.address.lower():
+        if new_owner_address.lower() == self.owner.lower():
             raise InvalidAddressError("Invalid address: summoner already belongs to " + str(new_owner_address))
         
         print("Sending " + str(self) + " to " + str(new_owner_address))
-        old_address_checksum = Web3.toChecksumAddress(self.signer.address)
+        old_address_checksum = Web3.toChecksumAddress(self.owner)
         new_address_checksum = Web3.toChecksumAddress(new_owner_address)
 
         transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(old_address_checksum, new_address_checksum, self.token_id)
-        return self.transacter.sign_and_execute(transfer_fun, gas = 70000, signer = self.signer)
+        return self.sign_and_execute(transfer_fun, gas = 70000)
 
     # SKILLS
     def get_skills(self):

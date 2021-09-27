@@ -3,6 +3,8 @@ from tabulate import tabulate
 from transacter import Transacter
 from web3.main import Web3
 
+class CraftingError(Exception):
+    pass
 
 class CraftingEngine:
 
@@ -15,7 +17,12 @@ class CraftingEngine:
 
     def __init__(self):
         self.w3 = Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
-        self.contracts = {cname: Transacter.rate_limit(self.get_codex_contract(cname)) for cname in self.contract_addresses.keys()}
+        self.contracts = {cname: Transacter.rate_limit(self.get_contract(cname)) for cname in self.contract_addresses.keys()}
+
+    def get_contract(self, contract_name):
+        '''Get contract or raise a KeyError if contract isn't listed'''
+        return self.w3.eth.contract(address = self.contract_checksums[contract_name], 
+                                    abi = Transacter.get_abi(self.contract_addresses[contract_name]))
 
     @staticmethod
     def check_craft_proba(craft_level, int_level, item_dc, craft_mats):
@@ -58,3 +65,32 @@ class CraftingEngine:
     def print_proba_table(item_dc):
         tbl = tabulate(CraftingEngine.get_proba_data(item_dc), headers = "keys", tablefmt = "pretty")
         print(Fore.WHITE + tbl)
+
+    def simulate_craft(self, summoner, item, craft_mats, times = 1):
+        """Simulate item crafting (proba + repeated attempts)"""
+        # 1. Show proba
+        print(f"Simulating craft of a {item} with {summoner} using {craft_mats} crafting material:")
+        proba = CraftingEngine.check_craft(summoner, item, craft_mats)
+        print(f"Success probability: {round(100 * proba, 1)}%")
+
+        # 2. Actual attempts
+        if times:
+            print(f"Simulating using crafting contract:")
+            attempts = [Transacter.rate_limit(self._simulate(summoner.token_id, item.base_type_id, item.item_id, craft_mats), 4) \
+                        for _ in range(times)]
+            
+            success_rate = sum(attempts) / times
+            print(f"Success rate: {round(100 * success_rate, 1)}%")
+        return proba
+        
+
+    def _simulate(self, summoner_id, base_type, item_type, craft_mats):
+        """Call simulate() from the crafting contract"""
+        crafted, check, cost, dc = self.contracts["crafting"].functions.\
+            simulate(summoner_id, base_type, item_type, craft_mats).call()
+        cost = cost / 1e18
+        if crafted:
+            print(Fore.GREEN + f"Success!\tCheck: {check}\tItem DC:{dc} \tCost:{cost}" + Fore.RESET)
+        else:
+            print(Fore.RED + f"Failure!\tCheck: {check}\tItem DC:{dc} \tCost:{cost}" + Fore.RESET)
+        return crafted

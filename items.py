@@ -68,7 +68,7 @@ class Item:
         class_mapping = {
             "goods": Good,
             "weapons": Weapon,
-            "armors": Armor
+            "armors": Armor,
         }
         item_data = codex.get_item_data(base_type, item_id)
         item_class = class_mapping[base_type]
@@ -109,6 +109,7 @@ class Item:
 
 class Good(Item):
 
+    base_type_id = 1
     base_type = "goods"
     DC = 20
 
@@ -135,6 +136,7 @@ class Good(Item):
 
 class Weapon(Item):
 
+    base_type_id = 3
     base_type = "weapons"
 
     proficiency_by_id = {
@@ -199,6 +201,7 @@ class Weapon(Item):
 
 class Armor(Item):
 
+    base_type_id = 2
     base_type = "armors"
 
     proficiency_by_id = {

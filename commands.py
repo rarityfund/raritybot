@@ -214,3 +214,14 @@ def command_send_summoner(args, transacter):
     transacter.wait_for_pending_transations()
 
 
+def command_craft(args, transacter):
+    args.base_type = args.base_type + "s"
+    codex = ItemCodex()
+    item = Item.create_from_data(args.base_type, args.item_id, codex = codex)
+    summoner = Summoner(args.crafter, transacter = transacter)
+    crafting_engine = CraftingEngine()
+
+    if args.simulate:
+        crafting_engine.simulate_craft(summoner, item, args.mats, times = args.amount)
+    else:
+        print("Error: crafting is not implemented yet!")

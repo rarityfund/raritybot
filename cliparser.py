@@ -121,4 +121,15 @@ def create_parser():
     parser_send_summoner.add_argument('--force',  help='''Force transfer to proceed. Needed when transferring ALL summoners.''',
                         action = "store_true")
 
+    # Command CRAFT
+    parser_craft = subparsers.add_parser("craft", parents=[shared_parser],
+                        help = "Craft items")
+    parser_craft.add_argument('base_type', help='What type of item.', 
+                        choices = ["good", "armor", "weapon"])
+    parser_craft.add_argument("item_id", help='Which item to craft (integer)', type = int)
+    parser_craft.add_argument('--crafter', help = "Summoner ID of the crafter", required = True, type = int)
+    parser_craft.add_argument('--mats', help = "Amount of crafting material to use", required = True, type = int)
+    parser_craft.add_argument('-n', '--amount', help = "Number of items to create (default = 1)", default = 1, type = int)
+    parser_craft.add_argument('--simulate', help = "Simulate craft", action = "store_true")
+
     return parser

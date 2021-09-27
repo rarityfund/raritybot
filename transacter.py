@@ -114,8 +114,10 @@ class Transacter:
             tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, wait_timeout)
         except web3.exceptions.TransactionNotFound as e:
             print(Fore.RED + "Tx not found:" + str(e))
+            return None
         except web3.exceptions.TimeExhausted as e:
-            print(Fore.RED + "Tx may have failed:" + str(e))
+            print(Fore.RED + "Tx is taking too long:" + str(e))
+            return None
 
         if tx_receipt.status == 1:
             actual_cost = tx_receipt.gasUsed * gas_price_for_log
@@ -131,7 +133,8 @@ class Transacter:
             print("Waiting for " + str(len(self.pending_transactions)) + " tx receipts...")
             for tx in self.pending_transactions:
                 tx_receipt = self.wait_for_tx(tx["tx_hash"], gas_price_for_log = tx["gas_price"])
-                receipts.append(tx_receipt)
+                if tx_receipt:
+                    receipts.append(tx_receipt)
 
         # Reset pending tx and return all receipts
         self.pending_transactions = []
