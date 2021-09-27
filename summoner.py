@@ -1,5 +1,5 @@
 from colorama import Fore
-from web3.main import Web3
+from web3 import Web3
 from tabulate import tabulate
 
 class InvalidSummonerError(Exception):
@@ -36,6 +36,7 @@ class Summoner:
         self.signer = signer
         self.contracts = transacter.contracts
         self.token_id = id
+        self.owner = self.get_owner()
         self.update_summoner_info()
         self.update_gold_balance()
         self.update_attributes()
@@ -46,6 +47,14 @@ class Summoner:
     def set_signer(self, signer):
         self.signer = signer
 
+    def update_summoner_info(self):
+        """Update class, level and xp"""
+        (xp, _, class_id, level) = self.contracts["summoner"].functions.summoner(self.token_id).call()
+        self.xp = xp / 1e18
+        self.class_id = class_id
+        self.class_name = self.class_from_index(class_id)
+        self.level =  level
+    
     def get_details(self):
         """Get a dict full of details about the summoner.
            Print it with tabulate for best results."""
@@ -70,6 +79,9 @@ class Summoner:
             "Cellar Loot": round(self.expected_cellar_loot())
         }
 
+    def get_owner(self):
+        return self.contracts["summoner"].functions.ownerOf(self.token_id).call()
+
     @staticmethod
     def print_summoners(summoners):
         details = [s.get_details() for s in summoners]
@@ -86,14 +98,6 @@ class Summoner:
         s = secs % 60
         hms = str(h) + "h" + str(m) + "m" + str(s) + "s"
         return hms.rjust(9, ' ')
-    
-    def update_summoner_info(self):
-        """Update class, level and xp"""
-        summoner_info = self.contracts["summoner"].functions.summoner(self.token_id).call()
-        self.class_id = summoner_info[2]
-        self.class_name = self.class_from_index(summoner_info[2])
-        self.level =  summoner_info[3]
-        self.xp = summoner_info[0] / 1e18
 
     @classmethod
     def class_from_index(cls, index):
@@ -110,7 +114,7 @@ class Summoner:
         self.gold = self.get_balance_gold()
 
     def check_claim_gold(self):
-        claimable_gold = self.contracts["gold"].functions.claimable(self.token_id).call()
+        claimable_gold = self.contracts["gold"].functions.claimable(self.token_id).call({"from": self.owner})
         return claimable_gold > 0
 
     def claim_gold(self):
@@ -209,7 +213,7 @@ class Summoner:
     # Generic balance and transfer
 
     def get_balance_erc20(self, contract, scaling_factor):
-        return contract.functions.balanceOf(self.token_id).call() / scaling_factor
+        return contract.functions.balanceOf(self.token_id).call({"from": self.owner}) / scaling_factor
 
     def transfer_erc20(self, to_id, amount, contract, scaling_factor):
         """Transfer tokens:
@@ -226,7 +230,7 @@ class Summoner:
             print(Fore.RED + "Sender is same as recipient: skipping")
             return None
 
-        balance = contract.functions.balanceOf(self.token_id).call()
+        balance = contract.functions.balanceOf(self.token_id).call({"from": self.owner})
         # Set amount
         if amount == "max":
             amount = int(balance)

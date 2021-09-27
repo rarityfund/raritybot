@@ -1,7 +1,10 @@
-# raritybot WIP (devel version)
+# raritybot 1.3.3
 
+- Bug fix: calls to `gold_contract.claimable()` must originate from owner or authorised addresses. 
+  The default `msg.sender` (0x000...000) passed the check unless an address was authorised on the gold contract, in which case the transaction reverted. 
+  Fixed by setting the `from` field to `summoner.owner` when checking gold claims.
 
-# raritybot 1.3.2 (master)
+# raritybot 1.3.2
 
 - Start implementing crafting: new command `show crafting-proba -n DC` will show crafting probabilities for an item of a given DC (20 by default) for a range of INT and craft levels. 
   Crafting probabilities only depend on INT level, craft level, item DC and how much crafting mats you're willing to spend.
