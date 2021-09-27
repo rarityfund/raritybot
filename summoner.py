@@ -30,6 +30,9 @@ class Summoner:
                 "Sorcerer",
                 "Wizard"]
 
+    # Minimum expected loot (>=) to enable a trip to the cellar
+    MIN_CELLAR_LOOT = 5
+
     def __init__(self, id, transacter, signer = None):
         # What we need to transact
         self.transacter = transacter
@@ -193,7 +196,7 @@ class Summoner:
         return int(self.contracts["craft1"].functions.scout(self.token_id).call())
 
     def check_go_cellar(self):
-        return self.time_to_next_cellar() <= 0 and self.expected_cellar_loot() > 0
+        return self.time_to_next_cellar() <= 0 and self.expected_cellar_loot() >= self.MIN_CELLAR_LOOT
 
     def go_cellar(self):
         if self.check_go_cellar():
