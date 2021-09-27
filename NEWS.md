@@ -1,6 +1,11 @@
-# raritybot 1.3.2
+# raritybot WIP (devel version)
 
-- Start implementing crafting: new command `show crafting-proba -n DC` will show crafting probabilities for an item of a give DC (20 by default) for a range of INT and craft level. Crafting probabilities only depend on INT level, craft level, item DC and how much crafting mats you're willing to spend. Low-probability combinations (<70%) are not shown.
+
+# raritybot 1.3.2 (master)
+
+- Start implementing crafting: new command `show crafting-proba -n DC` will show crafting probabilities for an item of a given DC (20 by default) for a range of INT and craft levels. 
+  Crafting probabilities only depend on INT level, craft level, item DC and how much crafting mats you're willing to spend.
+  Low-probability combinations (<70%) are not shown.
 
 - Add internal methods `Summoner.get_skills()` and `Summoner.get_attributes`. The summoner list now shows the attribute scores.
 
