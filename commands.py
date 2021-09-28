@@ -1,4 +1,5 @@
-from crafting import CraftingEngine
+from skills import Skill, SkillCodex
+from crafting import CraftingEngine, CraftingError
 from items import ItemCodex, Item
 from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
@@ -17,6 +18,10 @@ def command_show(args, transacter):
     elif args.what == "gas": 
         # Printing gas price and action costs
         transacter.print_gas_price()
+
+    elif args.what == "skills":
+        codex = SkillCodex()
+        Skill.print_skills(codex.get_skills())
     
     elif args.what == "items":
         # Listing crafted items
@@ -222,6 +227,15 @@ def command_craft(args, transacter):
     crafting_engine = CraftingEngine()
 
     if args.simulate:
-        crafting_engine.simulate_craft(summoner, item, args.mats, times = args.amount)
+        crafting_engine.simulate(summoner, item, args.mats, times = args.amount)
     else:
-        print("Error: crafting is not implemented yet!")
+        signer = get_signer_from_args(args)
+        summoner.set_signer(signer)
+        crafted = []
+        for _ in args.amount:
+            try:
+                c = crafting_engine.craft(summoner, item, args.mats, times = args.amount)
+                crafted.append(c)
+            except CraftingError as e:
+                print(Fore.RED + str(e) + Fore.RESET)
+                break

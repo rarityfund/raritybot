@@ -66,7 +66,7 @@ class CraftingEngine:
         tbl = tabulate(CraftingEngine.get_proba_data(item_dc), headers = "keys", tablefmt = "pretty")
         print(Fore.WHITE + tbl)
 
-    def simulate_craft(self, summoner, item, craft_mats, times = 1):
+    def simulate(self, summoner, item, craft_mats, times = 1):
         """Simulate item crafting (proba + repeated attempts)"""
         # 1. Show proba
         print(f"Simulating craft of a {item} with {summoner} using {craft_mats} crafting material:")
@@ -94,3 +94,27 @@ class CraftingEngine:
         else:
             print(Fore.RED + f"Failure!\tCheck: {check}\tItem DC:{dc} \tCost:{cost}" + Fore.RESET)
         return crafted
+
+    def craft(self, summoner, item, craft_mats):
+        if not summoner.signer:
+            raise CraftingError("Summoner can't sign tx without a signer")
+        if summoner.gold < item.cost:
+            raise CraftingError("Summoner doesn't have enough gold to craft the item")
+        if craft_mats < 0 or craft_mats % 10 != 0:
+            raise CraftingError("Invalid quantity of crafting material (should be a multiple of 10)")
+        if summoner.get_balance_craft1() < craft_mats:
+            raise CraftingError("Summoner doesn't have enough crafting material")
+        if summoner.get_craft_level() == 0:
+            raise CraftingError("Summoner can't craft. Increase crafting skill level.")
+        
+        success_proba = self.check_craft(summoner, item, craft_mats)
+        if success_proba == 0:
+            raise CraftingError("Summoner has no chance to craft this: aborting")
+        if success_proba < 0.5:
+            raise CraftingError(f"Success proba is too low ({round(100 * success_proba, 1)}%): aborting")
+
+        print(f"Attempting to craft a {item} with {summoner}. Success probability: {round(100 * success_proba, 1)}%")
+        craft_fun = self.contracts["crafting"].functions.craft(summoner.token_id, item.base_type_id, item.item_id, craft_mats)
+        tx_status = summoner.sign_and_execute(craft_fun, gas = 500000)
+        return tx_status
+        

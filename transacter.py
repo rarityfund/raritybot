@@ -147,7 +147,8 @@ class Transacter:
             "level_up": 70000,
             "claim_gold": 120000,
             "cellar": 120000,
-            "assign_attributes": 130000
+            "assign_attributes": 130000,
+            "crafting": 500000
         }
         print("Max cost per action in FTM:")
         for action in max_gas_per_action:
