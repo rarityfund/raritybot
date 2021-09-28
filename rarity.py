@@ -1,3 +1,4 @@
+from skills import InvalidSkillError
 from items import InvalidItemError
 from colorama import Fore
 import os.path
@@ -115,6 +116,13 @@ if (__name__ == "__main__"):
         try:
             commands.command_craft(args, transacter)
         except (InvalidItemError, InvalidAddressError, InvalidSummonerError) as e:
+            print(Fore.RED + str(e))
+
+    # SET-SKILL --------------
+    elif args.command == "set-skill":
+        try:
+            commands.command_set_skill(args, transacter)
+        except (InvalidSkillError, InvalidSummonerError) as e:
             print(Fore.RED + str(e))
 
     else:

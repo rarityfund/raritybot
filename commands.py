@@ -1,10 +1,10 @@
-from skills import Skill, SkillCodex
+from skills import InvalidSkillError, Skill, SkillCodex
 from crafting import CraftingEngine, CraftingError
 from items import ItemCodex, Item
 from rarity import get_address_from_args, get_signer_from_args
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
-from summoning import SummoningEngine
+from summoning import SummoningError, SummoningEngine
 from colorama import Fore
 import key
 
@@ -62,9 +62,12 @@ def command_summon(args, transacter):
         # In batch mode, we won't have the summoner ids until we get the receipts at the end
         for i in range(args.count):
             print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
-            summoning_engine.summon_from_class(args.summoner_class)
+            try:
+                summoning_engine.summon_from_class(args.summoner_class)
+            except SummoningError as e:
+                print(Fore.RED + str(e) + Fore.RESET)
         receipts = transacter.wait_for_pending_transations()
-        print(Fore.YELLOW + "Created " + str(len(receipts)) + " summoner" + "s" if len(receipts) > 1 else "" + ":")
+        print(Fore.YELLOW + "Created " + str(len(receipts)) + " summoner" + ("s" if len(receipts) > 1 else "") + ":")
         summoner_ids = []
         for receipt in receipts:
             summon_details = summoning_engine.get_details_from_summon_receipt(receipt)
@@ -84,9 +87,12 @@ def command_summon(args, transacter):
         summoner_ids = []
         for i in range(args.count):
             print(Fore.WHITE + "Creating new summoner of class " + str(args.summoner_class))
-            new_id = summoning_engine.summon_from_class(args.summoner_class)
-            summoner_ids.append(new_id)
-            summoning_engine.set_attributes(new_id, summoning_attributes)
+            try:
+                new_id = summoning_engine.summon_from_class(args.summoner_class)
+                summoner_ids.append(new_id)
+                summoning_engine.set_attributes(new_id, summoning_attributes)
+            except (key.InvalidInputError, SummoningError) as e:
+                print(Fore.RED + str(e) + Fore.RESET)
         print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + \
                 ("s" if len(summoner_ids) > 1 else "") + ":")
         
@@ -239,3 +245,30 @@ def command_craft(args, transacter):
             except CraftingError as e:
                 print(Fore.RED + str(e) + Fore.RESET)
                 break
+
+def command_set_skill(args, transacter):
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+    
+    # Check skill name is valid
+    codex = SkillCodex()
+    try:
+        codex.get_skill_id(args.skill_name)
+    except InvalidSkillError as e:
+        print(e)
+        return None
+
+    # Preparing summoners
+    if len(args.summoner_ids) == 1 and args.summoner_ids[0] == "all":
+        summoners = list_summoners(owner_address, transacter, set_signer = signer)
+    else:
+        summoners = [Summoner(id, transacter, signer = signer) for id in args.summoner_ids]
+
+    # Assigning skills
+    for summoner in summoners:
+        try:
+            summoner.set_skill(args.skill_name, args.skill_level)
+        except (InvalidSummonerError, InvalidSkillError) as e:
+            print(Fore.RED + str(e) + Fore.RESET)
+
+    transacter.wait_for_pending_transations()

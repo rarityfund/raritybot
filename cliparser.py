@@ -1,5 +1,5 @@
 import argparse
-from summoner import Summoner
+from raritydata import RarityData
 
 DEFAULT_KEY_FILE = "privatekeyencrypted.json"
 
@@ -62,7 +62,7 @@ def create_parser():
                         help = "Summon new summoners of a given class and optionally set attributes.")
     parser_summon.add_argument('summoner_class', # cannot use 'class' as var name in python
                         help='''Class used for summoning. Required.''',
-                        choices=Summoner.classes[1:12], default = "")
+                        choices=RarityData.class_names[1:12], default = "")
     parser_summon.add_argument('--attributes', dest = "attributes",
                         help='''Json-formatted attributes to assign after summoning.
                         If not provided, attributes won't be assigned. Should look like: 
@@ -120,6 +120,16 @@ def create_parser():
                         default = "")
     parser_send_summoner.add_argument('--force',  help='''Force transfer to proceed. Needed when transferring ALL summoners.''',
                         action = "store_true")
+
+    # Command SET-SKILL
+    parser_set_skill = subparsers.add_parser("set-skill", parents=[shared_parser],
+                        help = "Set a skill level")
+    parser_set_skill.add_argument('skill_name', help='Skill name, e.g. "craft". Run `show skills` to see all skill names.')
+    parser_set_skill.add_argument('skill_level', type = int, help='''Desired skill level. 
+                        Skill will only update if enough points are available and skill is not already at or above this level.''')
+    parser_set_skill.add_argument('summoner_ids', help='''One or more summoner ids whose skills to adjust. 
+                        Can also be "all", in which case all summoners on the address will change skills.''', nargs="+")
+                    
 
     # Command CRAFT
     parser_craft = subparsers.add_parser("craft", parents=[shared_parser],

@@ -1,4 +1,4 @@
-from summoner import Summoner
+from raritydata import RarityData
 from colorama.ansi import Fore
 from tabulate import tabulate
 from web3.main import Web3
@@ -35,9 +35,9 @@ class SkillCodex:
     def get_class_skills(self, class_id):
         return self.contracts["skills"].functions.class_skills_by_name(class_id).call()
 
-    def get_classes_from_skill(self, skill_name):
+    def get_classes(self, skill_name):
         class_ids = [class_id for class_id in self.class_skills if skill_name in self.class_skills[class_id]]
-        return [Summoner.classes[class_id] for class_id in class_ids]
+        return [RarityData.class_names[class_id] for class_id in class_ids]
 
     def get_skill_data(self, id):
         if id > self.codex_sizes["skill_codex"]:
@@ -48,6 +48,22 @@ class SkillCodex:
     def get_skills(self):
         num_skills = self.codex_sizes["skill_codex"]
         return [Skill(id, self) for id in range(1, num_skills + 1)]
+
+    def get_skill_name(self, id):
+        return self.get_skill_data(id)[1]
+
+    def get_skill_names(self):
+        num_skills = self.codex_sizes["skill_codex"]
+        return [self.get_skill_name(id) for id in range(1, num_skills + 1)]
+
+    def get_skill_id(self, skill_name):
+        """Get skill ID from skill name (case-insensitive)"""
+        skill_names_lower = [s.lower() for s in RarityData.skill_names]
+        try:
+            skill_id = skill_names_lower.index(skill_name.lower()) + 1
+        except ValueError:
+            raise InvalidSkillError("Not a valid skill")
+        return skill_id
 
 class Skill:
 
@@ -62,7 +78,7 @@ class Skill:
         self.armor_check_penalty = armor_check_penalty
         self.check = check
         self.action = action
-        self.classes = codex.get_classes_from_skill(self.name)
+        self.classes = codex.get_classes(self.name)
 
     def __str__(self):
         return f"Skill {self.name}"

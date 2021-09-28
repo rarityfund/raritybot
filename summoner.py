@@ -1,3 +1,5 @@
+from raritydata import RarityData
+from skills import InvalidSkillError, SkillCodex
 from colorama import Fore
 from web3 import Web3
 from tabulate import tabulate
@@ -17,28 +19,17 @@ class InvalidAddressError(Exception):
 class Summoner:
     '''Fetch summoner details and handle summoner actions'''
 
-    classes =  ["No class",
-                "Barbarian",
-                "Bard",
-                "Cleric",
-                "Druid",
-                "Fighter",
-                "Monk",
-                "Paladin",
-                "Ranger",
-                "Rogue",
-                "Sorcerer",
-                "Wizard"]
-
     # Minimum expected loot (>=) to enable a trip to the cellar
     MIN_CELLAR_LOOT = 5
 
     def __init__(self, id, transacter, signer = None):
-        # What we need to transact
+        try:
+            self.token_id = int(id)
+        except ValueError:
+            raise InvalidSummonerError("Invalid Summoner ID (must be castable to int)")
         self.transacter = transacter
         self.signer = signer
         self.contracts = transacter.contracts
-        self.token_id = id
         self.owner = self.get_owner()
         self.update_summoner_info()
         self.update_gold_balance()
@@ -53,14 +44,14 @@ class Summoner:
     def sign_and_execute(self, w3fun, gas):
         if not self.signer:
             raise PermissionError("Cannot sign without a signer with a private key")
-        self.transacter.sign_and_execute(w3fun, gas, signer = self.signer)
+        return self.transacter.sign_and_execute(w3fun, gas, signer = self.signer)
 
     def update_summoner_info(self):
         """Update class, level and xp"""
         (xp, _, class_id, level) = self.contracts["summoner"].functions.summoner(self.token_id).call()
         self.xp = xp / 1e18
         self.class_id = class_id
-        self.class_name = self.class_from_index(class_id)
+        self.class_name = RarityData.class_from_id(class_id)
         self.level =  level
     
     def get_details(self):
@@ -106,15 +97,6 @@ class Summoner:
         s = secs % 60
         hms = str(h) + "h" + str(m) + "m" + str(s) + "s"
         return hms.rjust(9, ' ')
-
-    @classmethod
-    def class_from_index(cls, index):
-        '''Get class from index (local lookup)'''
-        try:
-          return cls.classes[index]
-        except IndexError:
-            print("Invalid class ID")
-            return "N/A"
 
     ### GOLD -----------------------------
 
@@ -272,18 +254,47 @@ class Summoner:
         return self.sign_and_execute(transfer_fun, gas = 70000)
 
     # SKILLS
+    def set_skill(self, skill_name, level):
+        """Take a dictionary of skills and sets them if possible"""
+        codex = SkillCodex()
+        # Get skill id (checks that skill is valid at the same time)
+        skill_id = codex.get_skill_id(skill_name)
+        skill_index = skill_id - 1
+
+        # Check character has attributes (requirement)
+        if not self.has_attributes():
+            raise InvalidSummonerError(f"Summoner {self.token_id}: must set attributes before setting skills")
+
+        # Check current skill levels
+        current_skills = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        current_skill_level = current_skills[skill_index]
+        if level <= current_skill_level:
+            raise InvalidSummonerError(f"Summoner {self.token_id}: {skill_name} skill is already level {current_skill_level}.")
+        else:
+            print(f"Summoner {self.token_id}: raising {skill_name} skill from {current_skill_level} to {level}")
+
+        # Prep new skills
+        new_skills = current_skills
+        new_skills[skill_index] = level
+
+        # Check new skills
+        is_valid = self.contracts["skills"].functions.is_valid_set(self.token_id, new_skills).call({"from": self.owner})
+        if not is_valid:
+            raise InvalidSkillError("Invalid skill set. Do you have enough skill points?")
+        
+        # Assign the new skills
+        skill_fun = self.contracts["skills"].functions.set_skills(self.token_id, new_skills)
+        return self.sign_and_execute(skill_fun)
+
+
     def get_skills(self):
         """Dictionary of skill names to skill score"""
-        skills_vec = self.contracts["skills"].functions.get_skills(self.token_id).call()
-        class_skills = self.contracts["skills"].functions.class_skills(self.class_id).call()
-        skill_names = self.contracts["skills"].functions.class_skills_by_name(self.class_id).call()
-
-        skills = [score for i,score in enumerate(skills_vec) if class_skills[i]]
-        skill_dict = {skill_names[i]: score for i, score in enumerate(skills)}
+        skills_raw = self.contracts["skills"].functions.get_skills(self.token_id).call()
+        skill_dict = {RarityData.skill_names[i]: score for i, score in enumerate(skills_raw)}
         return skill_dict
 
-    def get_skill(self, skill_name):
-        return self.get_skills().get(skill_name, 0)
+    def get_skill_level(self, skill_name):
+        return self.get_skills().get(skill_name)
 
     def get_craft_level(self):
         """Three times faster than calling get_skill('Craft')"""
@@ -291,6 +302,9 @@ class Summoner:
         return skills_vec[5]
 
     # ATTRIBUTES
+    def has_attributes(self):
+        return self.contracts["attributes"].functions.character_created(self.token_id).call()
+
     def get_attributes(self):
         (strength, dexterity, constitution, intelligence, wisdom, charisma) = \
             self.contracts["attributes"].functions.ability_scores(self.token_id).call()

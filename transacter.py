@@ -2,7 +2,6 @@ from colorama.ansi import Fore
 from web3 import Web3
 import web3
 import requests
-from summoner import Summoner 
 import time 
 
 class Signer:
