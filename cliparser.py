@@ -134,7 +134,6 @@ def create_parser():
                         who don't already have attributes will get the attributes provided.''', nargs="+")
                     
 
-
     # Command SET-SKILL
     parser_set_skill = subparsers.add_parser("set-skill", parents=[shared_parser],
                         help = "Set a skill level")
@@ -155,5 +154,18 @@ def create_parser():
     parser_craft.add_argument('--mats', help = "Amount of crafting material to use", required = True, type = int)
     parser_craft.add_argument('-n', '--amount', help = "Number of items to create (default = 1)", default = 1, type = int)
     parser_craft.add_argument('--simulate', help = "Simulate craft", action = "store_true")
+
+    # Command SETUP-CRAFTING
+    parser_setup_crafting = subparsers.add_parser("setup-crafting", parents=[shared_parser],
+                        help = '''Setup approvals so your summoners can craft. 
+                        Note this does not set up attributes or skills, see set-attributes and set-skills for that.''')
+    parser_setup_crafting.add_argument('summoner_ids', help='''One or more summoner ids to setup for crafting. 
+                        Can also be "all", in which case all summoners on the address will be ready to craft.''', nargs="+")
+    parser_setup_crafting.add_argument('--approve-for-all', help='''Recommended. If enabled, the bot will use setApprovalForAll() 
+                        rather than approve() to enable the crafting contract to spend your XP. This is much more efficient as
+                        only one tx is needed to approve for all the summoners, and the approval will be permanent (until revoked).
+                        However, this gives more permissions than strictly needed to the crafting contract.''',
+                        action = "store_true")
+                               
 
     return parser

@@ -79,7 +79,7 @@ class Summoner:
             "XP": xp_str,
             "Gold": round(self.gold),
             "Next Adventure": self.seconds_to_hms(self.time_to_next_adventure()),
-            "Crafter (level)": f'{"yes" if craft_level > 0 and self.is_ready_to_craft() else "no"} (lvl {craft_level})',
+            "Crafter (level)": f'{"yes" if craft_level > 0 and self.is_ready_to_craft() else "no "} (lvl {craft_level})',
             "Craft Mat(I)": craft_mats if craft_mats else "",
             "Next Cellar": self.seconds_to_hms(self.time_to_next_cellar()),
             "Next Loot": cellar_loot if cellar_loot else ""
@@ -291,7 +291,7 @@ class Summoner:
         
         # Assign the new skills
         skill_fun = self.contracts["skills"].functions.set_skills(self.token_id, new_skills)
-        return self.sign_and_execute(skill_fun)
+        return self.sign_and_execute(skill_fun, gas = 300000)
 
 
     def get_skills(self):

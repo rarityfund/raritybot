@@ -120,10 +120,10 @@ class Transacter:
 
         if tx_receipt.status == 1:
             actual_cost = tx_receipt.gasUsed * gas_price_for_log
-            print(Fore.GREEN + "Tx success, actual cost " + str(round(actual_cost, 6)) + " FTM, id: " + str(tx_hash))
+            print(Fore.GREEN + "Tx success, actual cost " + str(round(actual_cost, 6)) + " FTM, id: " + str(tx_hash) + Fore.RESET)
             self.session_cost += actual_cost
         else:
-            print(Fore.RED + "Tx failed (status = " + str(tx_receipt.status) + ")")
+            print(Fore.RED + "Tx failed (status = " + str(tx_receipt.status) + ")" + Fore.RESET)
         return tx_receipt
 
     def wait_for_pending_transations(self, wait_timeout = 360):

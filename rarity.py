@@ -118,7 +118,7 @@ if (__name__ == "__main__"):
         except (InvalidItemError, InvalidAddressError, InvalidSummonerError) as e:
             print(Fore.RED + str(e))
 
-    # SET-SKILL --------------
+    # SET-ATTRIBUTES --------------
     elif args.command == "set-attributes":
         try:
             commands.command_set_attributes(args, transacter)
@@ -132,6 +132,10 @@ if (__name__ == "__main__"):
         except (InvalidSkillError, InvalidSummonerError) as e:
             print(Fore.RED + str(e))
 
+    # SETUP-CRAFTING --------------
+    elif args.command == "setup-crafting":
+        commands.command_setup_crafting(args, transacter)
+        
     else:
         print(Fore.RED + "Unrecognised command")    
         

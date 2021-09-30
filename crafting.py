@@ -74,16 +74,23 @@ class CraftingEngine:
         # 1. Show proba
         print(f"Simulating craft of a {item} with {summoner} using {craft_mats} crafting material:")
         proba = CraftingEngine.check_craft(summoner, item, craft_mats)
-        print(f"Success probability: {round(100 * proba, 1)}%")
+        print(f"Success probability with {craft_mats} craft mats: {round(100 * proba, 1)}%")
 
-        # 2. Actual attempts
+        # 2. Show optimal amount of craft mats
+        proba_base = CraftingEngine.check_craft(summoner, item, 0)
+        optimal_craft_mats = 10 * (1 - proba_base) / 0.05
+        print(f"Craft mats for 100% success rate: {round(optimal_craft_mats)} craft mats")
+        
+
+        # 3. Actual attempts
         if times:
             print(f"Simulating using crafting contract:")
             attempts = [Transacter.rate_limit(self._simulate(summoner.token_id, item.base_type_id, item.item_id, craft_mats), 4) \
                         for _ in range(times)]
             
-            success_rate = sum(attempts) / times
-            print(f"Success rate: {round(100 * success_rate, 1)}%")
+            if times > 1:
+                success_rate = sum(attempts) / times
+                print(f"Success rate: {round(100 * success_rate, 1)}%")
         return proba
         
 
@@ -132,7 +139,7 @@ class CraftingEngine:
                 tx1 = summoner.approve_for_all(crafting_contract)
                 if tx1["status"] == "pending":
                     # Force to wait so we don't approve_for_all more than once by mistake
-                    tx1["receipt"] = summoner.transacter.wait_for_receipt(tx1["hash"])
+                    tx1["receipt"] = summoner.transacter.wait_for_tx(tx1["hash"])
             else:
                 tx1 = summoner.approve(crafting_contract)
 

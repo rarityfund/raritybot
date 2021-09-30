@@ -224,6 +224,35 @@ def command_send_summoner(args, transacter):
 
     transacter.wait_for_pending_transations()
 
+def command_setup_crafting(args, transacter):
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+
+    # Preparing summoners
+    if len(args.summoner_ids) == 1 and args.summoner_ids[0] == "all":
+        summoners = list_summoners(owner_address, transacter, set_signer = signer)
+    else:
+        summoners = [Summoner(id, transacter, signer = signer) for id in args.summoner_ids]
+
+    if (args.approve_for_all):
+        print(Fore.YELLOW + "Setting up crafting with --approve-for-all. This will:")
+        print(f"- Approve the crafting contract ({CraftingEngine.contract_addresses['crafting']}) on your address")
+        print("Then, for each selected summoner:")
+        print(f"- approve gold spending for summoner {CraftingEngine.crafting_spender} (owned by the crafting contract)")
+        print(f"- approve craft mats spending for summoner {CraftingEngine.crafting_spender} (owned by the crafting contract)")
+        print(Fore.RESET)
+    else:
+        print(Fore.YELLOW + "Setting up crafting without --approve-for-all. For each selected summoner, this will:")
+        print(f"- Approve the crafting contract ({CraftingEngine.contract_addresses['crafting']}) for that particular summoner")
+        print(f"- approve gold spending by summoner {CraftingEngine.crafting_spender} (owned by the crafting contract)")
+        print(f"- approve craft mats spending by summoner {CraftingEngine.crafting_spender} (owned by the crafting contract)")
+        print(Fore.RESET)
+        
+    # Setting approvals as required
+    for summoner in summoners:
+        summoner.prepare_to_craft(approve_for_all = args.approve_for_all)
+
+    transacter.wait_for_pending_transations()
 
 def command_craft(args, transacter):
     args.base_type = args.base_type + "s"
