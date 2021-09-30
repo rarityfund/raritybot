@@ -1,3 +1,4 @@
+from summoning import SummoningEngine
 from raritydata import RarityData
 from skills import InvalidSkillError, SkillCodex
 from colorama import Fore
@@ -319,3 +320,11 @@ class Summoner:
 
     def update_attributes(self):
         self.attributes = self.get_attributes()
+
+    def set_attributes(self, attributes):
+        if not self.signer:
+            raise PermissionError("Cannot set attributes without a signer")
+        if self.has_attributes():
+            raise InvalidSummonerError(f"Summoner {self.token_id} already has attributes: skipping.")
+        summoning_engine = SummoningEngine(self.transacter, self.signer)
+        return summoning_engine.set_attributes(self.token_id, attributes)

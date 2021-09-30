@@ -121,6 +121,20 @@ def create_parser():
     parser_send_summoner.add_argument('--force',  help='''Force transfer to proceed. Needed when transferring ALL summoners.''',
                         action = "store_true")
 
+    # Command SET-ATTRIBUTES
+    parser_set_attrs = subparsers.add_parser("set-attributes", parents=[shared_parser],
+                        help = "Set summoner attributes")
+    parser_set_attrs.add_argument('attributes', help='''Json-formatted attributes to assign after summoning.
+                        Must look like: 
+                        '{"str":8, "dex":8, "const":8, "int":8, "wis":8, "cha":8}'. 
+                        The assignment must cost 32 AP to buy to be valid (bot will abort if it's not the case).
+                        ''')
+    parser_set_attrs.add_argument('summoner_ids', help='''One or more summoner ids whose attributes to set. 
+                        Can also be "all", in which case all summoners on the address 
+                        who don't already have attributes will get the attributes provided.''', nargs="+")
+                    
+
+
     # Command SET-SKILL
     parser_set_skill = subparsers.add_parser("set-skill", parents=[shared_parser],
                         help = "Set a skill level")

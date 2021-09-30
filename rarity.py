@@ -119,6 +119,13 @@ if (__name__ == "__main__"):
             print(Fore.RED + str(e))
 
     # SET-SKILL --------------
+    elif args.command == "set-attributes":
+        try:
+            commands.command_set_attributes(args, transacter)
+        except (key.InvalidInputError, InvalidSummonerError, PermissionError) as e:
+            print(Fore.RED + str(e))
+
+    # SET-SKILL --------------
     elif args.command == "set-skill":
         try:
             commands.command_set_skill(args, transacter)

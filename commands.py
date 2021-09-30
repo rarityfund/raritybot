@@ -1,12 +1,12 @@
 from skills import InvalidSkillError, Skill, SkillCodex
 from crafting import CraftingEngine, CraftingError
 from items import ItemCodex, Item
-from rarity import get_address_from_args, get_signer_from_args
+from rarity import get_address_from_args, get_signer_from_args, print_intro
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError, Summoner
 from list_summoners import list_items, list_summoners
 from summoning import SummoningError, SummoningEngine
 from colorama import Fore
-import key
+from key import InvalidInputError
 
 def command_show(args, transacter):
     if args.what == "summoners":
@@ -50,7 +50,7 @@ def command_summon(args, transacter):
     if args.attributes:
         try:
             summoning_attributes = summoning_engine.parse_attributes(args.attributes)
-        except key.InvalidInputError as e:
+        except InvalidInputError as e:
             print(Fore.RED + str(e) + Fore.RESET)
             exit()
 
@@ -91,7 +91,7 @@ def command_summon(args, transacter):
                 new_id = summoning_engine.summon_from_class(args.summoner_class)
                 summoner_ids.append(new_id)
                 summoning_engine.set_attributes(new_id, summoning_attributes)
-            except (key.InvalidInputError, SummoningError) as e:
+            except (InvalidInputError, SummoningError) as e:
                 print(Fore.RED + str(e) + Fore.RESET)
         print(Fore.YELLOW + "Created " + str(len(summoner_ids)) + " summoner" + \
                 ("s" if len(summoner_ids) > 1 else "") + ":")
@@ -245,6 +245,36 @@ def command_craft(args, transacter):
             except CraftingError as e:
                 print(Fore.RED + str(e) + Fore.RESET)
                 break
+
+
+def command_set_attributes(args, transacter):
+    owner_address = get_address_from_args(args)
+    signer = get_signer_from_args(args)
+
+    summoning_engine = SummoningEngine(transacter, signer)
+
+    # Parse and check attributes
+    try:
+        attributes = summoning_engine.parse_attributes(args.attributes)
+    except InvalidInputError as e:
+        print(Fore.RED + str(e) + Fore.RESET)
+        exit()
+
+    # Preparing summoners
+    if len(args.summoner_ids) == 1 and args.summoner_ids[0] == "all":
+        summoners = list_summoners(owner_address, transacter, set_signer = signer)
+    else:
+        summoners = [Summoner(id, transacter, signer = signer) for id in args.summoner_ids]
+
+    # Assigning Attributes
+    for summoner in summoners:
+        try:
+            summoner.set_attributes(attributes)
+        except (InvalidInputError, PermissionError, InvalidSummonerError) as e:
+            print(Fore.RED + str(e) + Fore.RESET)
+
+    transacter.wait_for_pending_transations()
+
 
 def command_set_skill(args, transacter):
     owner_address = get_address_from_args(args)
