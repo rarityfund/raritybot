@@ -7,10 +7,10 @@ import time
 class Signer:
     """Class in charge of signing transactions"""
     def __init__(self, address, private_key):
-        self.address = address
+        self.address = Web3.toChecksumAddress(address)
         self.private_key = private_key
         self.w3 =  Web3(Web3.HTTPProvider('https://rpc.ftm.tools/'))
-        self.nonce =  self.w3.eth.get_transaction_count(Web3.toChecksumAddress(self.address))
+        self.nonce =  self.w3.eth.get_transaction_count(self.address)
 
     def sign(self, w3fun, gas):
         """
@@ -108,7 +108,7 @@ class Transacter:
             return {"status": tx_status, "hash": tx_hash, "receipt": tx_receipt}
 
     def wait_for_tx(self, tx_hash, gas_price_for_log, wait_timeout = 360):
-        # Wait for receipt
+        """Returns tx receipt"""
         try:
             tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, wait_timeout)
         except web3.exceptions.TransactionNotFound as e:
@@ -127,6 +127,7 @@ class Transacter:
         return tx_receipt
 
     def wait_for_pending_transations(self, wait_timeout = 360):
+        """Returns a (possibly empty) list of receipts"""
         receipts = []
         if len(self.pending_transactions) > 0:
             print("Waiting for " + str(len(self.pending_transactions)) + " tx receipts...")

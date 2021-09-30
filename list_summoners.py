@@ -38,7 +38,7 @@ def list_tokens_from_contract(owner_address, contract_address, limit = 0):
     # We should only ever have counts of -1 and +1
     token_ids =  [token for token in token_counts if token_counts[token] > 0]
     if limit:
-        print("Limiting results to " + str(limit))
+        print(f"Limiting results to {limit} / {len(token_ids)} tokens.")
         token_ids = token_ids[0:limit]
 
     return token_ids

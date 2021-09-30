@@ -1,3 +1,4 @@
+from crafting import CraftingEngine
 from summoning import SummoningEngine
 from raritydata import RarityData
 from skills import InvalidSkillError, SkillCodex
@@ -29,9 +30,9 @@ class Summoner:
         except ValueError:
             raise InvalidSummonerError("Invalid Summoner ID (must be castable to int)")
         self.transacter = transacter
-        self.signer = signer
         self.contracts = transacter.contracts
         self.owner = self.get_owner()
+        self.set_signer(signer)
         self.update_summoner_info()
         self.update_gold_balance()
         self.update_attributes()
@@ -40,11 +41,13 @@ class Summoner:
         return "A " + self.class_name + " (" + str(self.token_id) + ")"
 
     def set_signer(self, signer):
+        if signer and signer.address != self.owner:
+            raise PermissionError("Cannot assign signer to summoner: address does not match owner.")
         self.signer = signer
 
     def sign_and_execute(self, w3fun, gas):
         if not self.signer:
-            raise PermissionError("Cannot sign without a signer with a private key")
+            raise PermissionError("Trying to sign without a signer: this should not happen.")
         return self.transacter.sign_and_execute(w3fun, gas, signer = self.signer)
 
     def update_summoner_info(self):
@@ -59,28 +62,32 @@ class Summoner:
         """Get a dict full of details about the summoner.
            Print it with tabulate for best results."""
         xp_str = str(round(self.xp)) + "/" + str(round(self.xp_required()))
+        craft_level = self.get_craft_level()
+        cellar_loot = round(self.expected_cellar_loot())
+        craft_mats = round(self.get_balance_craft1())
         return  {
             "SummonerId": self.token_id,
             "Class": self.class_name,
             "Level": "lvl " + str(self.level),
             
-            "STR": self.attributes["str"],
-            "DEX": self.attributes["dex"],
-            "CON": self.attributes["const"],
-            "INT": self.attributes["int"],
-            "WIS": self.attributes["wis"],
-            "CHA": self.attributes["cha"],
-            
+            "STR": self.attributes["str"]   if self.attributes["str"] else "",
+            "DEX": self.attributes["dex"]   if self.attributes["str"] else "",
+            "CON": self.attributes["const"] if self.attributes["str"] else "",
+            "INT": self.attributes["int"]   if self.attributes["str"] else "",
+            "WIS": self.attributes["wis"]   if self.attributes["str"] else "",
+            "CHA": self.attributes["cha"]   if self.attributes["str"] else "",
             "XP": xp_str,
             "Gold": round(self.gold),
-            "Craft Mat(I)": round(self.get_balance_craft1()),
             "Next Adventure": self.seconds_to_hms(self.time_to_next_adventure()),
+            "Crafter (level)": f'{"yes" if craft_level > 0 and self.is_ready_to_craft() else "no"} (lvl {craft_level})',
+            "Craft Mat(I)": craft_mats if craft_mats else "",
             "Next Cellar": self.seconds_to_hms(self.time_to_next_cellar()),
-            "Cellar Loot": round(self.expected_cellar_loot())
+            "Next Loot": cellar_loot if cellar_loot else ""
         }
 
     def get_owner(self):
-        return self.contracts["summoner"].functions.ownerOf(self.token_id).call()
+        owner = self.contracts["summoner"].functions.ownerOf(self.token_id).call()
+        return Web3.toChecksumAddress(owner)
 
     @staticmethod
     def print_summoners(summoners):
@@ -242,16 +249,15 @@ class Summoner:
 
     def transfer_to_new_owner(self, new_owner_address):
         """Transfer the summoner to a new owner"""
+        new_owner_address = Web3.toChecksumAddress(new_owner_address)
         if not new_owner_address.startswith("0x") or len(new_owner_address) != 42:
             raise InvalidAddressError("Invalid address: " + str(new_owner_address))
-        if new_owner_address.lower() == self.owner.lower():
+        if new_owner_address == self.owner:
             raise InvalidAddressError("Invalid address: summoner already belongs to " + str(new_owner_address))
         
         print("Sending " + str(self) + " to " + str(new_owner_address))
-        old_address_checksum = Web3.toChecksumAddress(self.owner)
-        new_address_checksum = Web3.toChecksumAddress(new_owner_address)
 
-        transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(old_address_checksum, new_address_checksum, self.token_id)
+        transfer_fun = self.contracts["summoner"].functions.safeTransferFrom(self.owner, new_owner_address, self.token_id)
         return self.sign_and_execute(transfer_fun, gas = 70000)
 
     # SKILLS
@@ -328,3 +334,80 @@ class Summoner:
             raise InvalidSummonerError(f"Summoner {self.token_id} already has attributes: skipping.")
         summoning_engine = SummoningEngine(self.transacter, self.signer)
         return summoning_engine.set_attributes(self.token_id, attributes)
+
+    def setup_crafting(self):
+        if not self.has_attributes():
+            raise InvalidSummonerError("Set up attributes (preferably high INT) before setting up for crafting.")
+        if not self.get_craft_level():
+            try:
+                self.set_skill("Craft", 5)
+            except (InvalidSummonerError, InvalidSkillError) as e:
+                print(e)
+
+    # APPROVALS
+    def approve(self, address):
+        """Approve an address to act on your summoner. Danger zone!"""
+        print(f"Summoner {self.token_id}: approving address {address} (basic access)")
+        return self.sign_and_execute(self.contracts["summoner"].functions.approve(address, self.token_id), gas = 52000)
+
+    def revoke_approval(self, address):
+        """Revoke simple approval (not approval for all)."""
+        currently_approved = self.contracts["summoner"].functions.getApproved(self.token_id).call()
+        if address.lower() == currently_approved.lower():
+            zero_address = '0x' + '0' * 40
+            print(f"Revoking basic approval for address {address} on owner address {self.owner}.")
+            return self.sign_and_execute(self.contracts["summoner"].functions.approve(zero_address, self.token_id), gas = 52000)
+
+    def approve_for_all(self, address):
+        """Approve an address to act on ALL your summoner and set up more approvals! MEGA Danger zone!"""
+        print(Fore.RED + f"WARNING: Approving address {address} on owner address {self.owner}. " + \
+              "It will have access to ALL your summoners." + Fore.RESET)
+        return self.sign_and_execute(self.contracts["summoner"].functions.setApprovalForAll(address, True), gas = 52000)
+
+    def revoke_approval_for_all(self, address):
+        """Revoke approval for all"""
+        print(f"Revoking approval for all for address {address} on owner address {self.owner}.")
+        return self.sign_and_execute(self.contracts["summoner"].functions.setApprovalForAll(address, False), gas = 52000)
+
+    def is_approved(self, address):
+        """Check if address is approved to act on summoner"""
+        address = Web3.toChecksumAddress(address)
+        if self.owner == address:
+            return True
+        approved = self.contracts["summoner"].functions.getApproved(self.token_id).call()
+        if address == Web3.toChecksumAddress(approved):
+            return True
+        approved_all = self.contracts["summoner"].functions.isApprovedForAll(self.owner, address).call()
+        return approved_all
+    
+    def approve_gold(self, spender, amount = 2**256 - 1):
+        """Approve another summoner to spend your gold. Danger zone!"""
+        amount_str = str(amount) if amount != -1 else 'unlimited'
+        print(f"Summoner {self.token_id}: approving gold for summoner {spender} up to {amount_str} gp")
+        return self.sign_and_execute(self.contracts["gold"].functions.approve(self.token_id, spender, amount), gas = 52000)
+
+    def get_gold_allowance(self, spender):
+        return self.contracts["gold"].functions.allowance(self.token_id, spender).call()
+
+    def approve_craft_mats(self, spender, amount = 2**256 - 1):
+        """Approve another summoner to spend your craft mats. Danger zone!"""
+        amount_str = str(amount) if amount != -1 else 'unlimited'
+        print(f"Summoner {self.token_id}: approving craft mats for summoner {spender} up to {amount_str} craft mats")
+        return self.sign_and_execute(self.contracts["craft1"].functions.approve(self.token_id, spender, amount), gas = 52000)
+
+    def get_craft_mats_allowance(self, spender):
+        return self.contracts["craft1"].functions.allowance(self.token_id, spender).call()
+
+
+    # CRAFTING
+    def prepare_to_craft(self, approve_for_all):
+        return CraftingEngine.setup_crafting(self, approve_for_all)   
+
+    def is_ready_to_craft(self):
+        return CraftingEngine.is_ready_to_craft(self)
+
+    def craft(self, item, craft_mats):
+        return CraftingEngine.craft(self, item, craft_mats)
+
+    def simulate_craft(self, item, craft_mats, times):
+        return CraftingEngine.simulate(self, item, craft_mats, times)

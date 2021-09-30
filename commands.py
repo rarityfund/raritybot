@@ -237,15 +237,18 @@ def command_craft(args, transacter):
     else:
         signer = get_signer_from_args(args)
         summoner.set_signer(signer)
-        crafted = []
-        for _ in args.amount:
+        receipts = []
+        for _ in range(args.amount):
             try:
-                c = crafting_engine.craft(summoner, item, args.mats, times = args.amount)
-                crafted.append(c)
+                tx_status = crafting_engine.craft(summoner, item, args.mats)
+                if tx_status["status"] == "pending":
+                    receipts.extend(transacter.wait_for_pending_transations())
+                else:
+                    receipts.append(tx_status["receipt"])
             except CraftingError as e:
                 print(Fore.RED + str(e) + Fore.RESET)
                 break
-
+        print(receipts)
 
 def command_set_attributes(args, transacter):
     owner_address = get_address_from_args(args)

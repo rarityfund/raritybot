@@ -12,6 +12,9 @@ class CraftingEngine:
         "crafting": "0xf41270836dF4Db1D28F7fd0935270e3A603e78cC"
     }
 
+    # This is the summoner owned by the crafting contract who spends your gold and craft mats when you craft
+    crafting_spender = 1758709
+
     # Contracts adress checksums
     contract_checksums = {k: Web3.toChecksumAddress(v) for k, v in contract_addresses.items()}
 
@@ -115,6 +118,38 @@ class CraftingEngine:
 
         print(f"Attempting to craft a {item} with {summoner}. Success probability: {round(100 * success_proba, 1)}%")
         craft_fun = self.contracts["crafting"].functions.craft(summoner.token_id, item.base_type_id, item.item_id, craft_mats)
-        tx_status = summoner.sign_and_execute(craft_fun, gas = 500000)
-        return tx_status
+        return summoner.sign_and_execute(craft_fun, gas = 500000)
         
+    @staticmethod
+    def setup_crafting(summoner, approve_for_all = False):
+        """Set up approvals required before crafting"""
+        tx1 = tx2 = tx3 = None
+
+        # Approving the crafting contract on the summoner (required so it can spend XP)
+        crafting_contract = CraftingEngine.contract_addresses["crafting"]
+        if not summoner.is_approved(crafting_contract):
+            if approve_for_all:
+                tx1 = summoner.approve_for_all(crafting_contract)
+                if tx1["status"] == "pending":
+                    # Force to wait so we don't approve_for_all more than once by mistake
+                    tx1["receipt"] = summoner.transacter.wait_for_receipt(tx1["hash"])
+            else:
+                tx1 = summoner.approve(crafting_contract)
+
+        # The crafting contract owns  summoner who spends your gold and craft mats when you craft
+        crafting_spender = CraftingEngine.crafting_spender
+        if summoner.get_gold_allowance(crafting_spender) == 0:
+            tx2 = summoner.approve_gold(crafting_spender)
+        if summoner.get_craft_mats_allowance(crafting_spender) == 0:
+            tx3 = summoner.approve_craft_mats(crafting_spender)
+
+        return tx1, tx2, tx3
+
+    @staticmethod
+    def is_ready_to_craft(summoner):
+        crafting_contract = CraftingEngine.contract_addresses["crafting"]
+        crafting_spender = CraftingEngine.crafting_spender
+        return  summoner.get_craft_level() > 0 and \
+                summoner.is_approved(crafting_contract) and \
+                summoner.get_gold_allowance(crafting_spender) > 0 and \
+                summoner.get_craft_mats_allowance(crafting_spender) > 0
