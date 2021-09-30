@@ -12,7 +12,7 @@ from transacter import Signer, Transacter
 from summoner import InvalidAddressError, InvalidAmountError, InvalidSummonerError
 
 def print_intro():
-    print('Welcome to Rarity bot v1.3.3')
+    print('Welcome to Rarity bot v1.4.0. Use `--help` if you need help for any command.')
 
 def check_keyfile(args):
     # If keyfile doesn't exist, we exit

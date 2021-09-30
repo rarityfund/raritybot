@@ -1,3 +1,108 @@
+# raritybot 1.4.0
+
+A big release with many new features: setting attributes and skills, approving contracts, crafting simulation (with probabilities), actual crafting, etc.
+
+In all the examples below,  `[...]` could stand for `--keyfile key.json --txmode batch --maxgasprice 200` or any other options.
+
+### Attributes 
+
+Set your attributes with the new command `set-attributes`, taking a JSON-formatted string like `'{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}'` and a list of summoner ids. It was already possible to set attributes while summoning new characters, but this works on existing summoners. The bot will skip gracefully if attributes are already set or if the provided set is invalid.
+
+Examples:
+```
+# Set attributes on 3 summoners 2890228 2890220 2890230
+python3 rarity.py set-attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}' 2890228 2890220 2890230 [...]
+
+# Set attributes on everyone (who doesn't already have attributes)
+python3 rarity.py set-attributes '{"str":20,"dex":10,"const":14,"int":8,"wis":8,"cha":8}' all [...]
+```
+
+### Skills 
+
+- Set your skills (one at a time) with the new command `set-skill`, taking a skill name and a list of summoner ids.
+  The bot will skip gracefully if a summoner cannot increase a skill for any reason.
+  
+- Use `show skills` to list all available skills along with a thorough description of each.
+
+Examples:
+```
+# Show available skills
+python3 rarity.py show skills
+
+# Set craft to level 5 for 3 summoners 2890228 2890220 2890230
+python3 rarity.py set-skill craft 5 2890228 2890220 2890230 [...]
+
+# Set craft to level 5 on for all summoners on the address
+python3 rarity.py set-skill craft 5 all [...]
+```
+
+### Crafting prerequisite
+
+You need to have your attributes set (preferably with high INT) and the "craft" skill before you can craft anything. 
+You then need to approve a number of contract interactions: the crafting contract must be able to spend your XP, your gold and your crafting materials. 
+
+You can see your summoner's crafting status in a new column "Crafter", which will say "yes" is the summoner has all the approvals and the skills required to craft.
+
+You can prepare your summoners for crafting using the new `setup-crafting` command which will set up the relevant approvals. You can prepare a selection of summoners by listing their IDs or all of them with "all". The bot will skip gracefully any steps that is not needed for the selected summoners.
+
+If the flag `--approve-for-all` is set, then the crafting contract will be allowed on your address globally, so all summoners will be able to craft and that approval will be permanent (until revoked). It will only take 1 tx in total rather than 1 per summoner. However, this gives the crafting contract more permissions than strictly needed (like the ability to self-approve to spend tokens). The choice is up to you, but if you have a lot of summoners, you will probably prefer `--approve-for-all`. Note that the bot will still need to approve gold and craft mats spends for each summoner individually.
+
+Examples:
+```
+python3 rarity.py setup-crafting 2890228 2890220 2890230 [...]
+python3 rarity.py setup-crafting all [...]
+python3 rarity.py setup-crafting all --approve-for-all [...]
+```
+
+### Crafting
+
+Finally, after setting attribute, skills and setting up the approvals, we can also craft with the bot!
+
+- List your crafted items with `show items`.
+
+- List all craftable items, their stats and their DC (i.e. how hard they are to craft) with `show craftable`.
+  This is useful to look up the ID of the items you want to craft.
+
+- Craft with `craft [item type] [item id] --crafter [summoner id] --mats [crafting material]`.
+  Simulate simply by adding the `--simulate` flag. A crafting simulation will tell you how likely you are to succeed and how much craft mats you need to spend to ensure 100% success rate.
+
+- Using crafting material (craft mats) is optional but greatly improves your chances to craft an item. The more mats you use, the more likely you are to succeed. You can see how crafting probabilities work with `show crafting-probas`.
+
+
+For example:
+```
+# See what you can craft
+python3 rarity.py show craftable
+
+# Simulating the crafting of a great sword with 100 craft mats
+# Don't forget the --simulate flag or you'll actually craft it !!!
+python3 rarity.py craft weapon 38 --crafter 2890228 --mats 100 --simulate [...]
+
+# Crafting a studded leather armor - for real
+python3 rarity.py craft armor 3 --crafter 2890228 --mats 100 [...]
+
+# Crafting 5 torches - this will craft up to 5 torches but might stop before if you're not able to craft anymore
+python3 rarity.py craft good 23 -n 5 --crafter 2890228 --mats 100 [...]
+
+# Display your items
+python3 rarity.py show items
+
+```
+
+### Other
+
+- Minor UI improvements
+
+- Misc bug fixes and internal refactoring
+
+- Only requiring address or private key when required. 
+  For example, now you can run `show summoners` without password and `show gas` or `show craftable` without even having a keyfile
+
+
+### Crafting
+
+
+
 # raritybot 1.3.3
 
 - Bug fix: calls to `gold_contract.claimable()` must originate from owner or authorised addresses. 
