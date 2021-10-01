@@ -64,7 +64,7 @@ These general arguments are accepted by all commands:
 These are the available commands:
 
 - `import-key`
-- `show` (and its subcommands `show sumoners`, `show gas`, `show items`, `show craftable`, `show skills`, etc)
+- `show` (and its subcommands `show summoners`, `show gas`, `show items`, `show craftable`, `show skills`, etc)
 - `run` to run the daily actions like adventure, going to the cellar, etc
 - `summon` to create new summoners
 - `transfer` to move a certain quantity gold or crafting material around
